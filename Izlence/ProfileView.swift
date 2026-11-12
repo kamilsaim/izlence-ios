@@ -181,22 +181,25 @@ struct ContentSettingsView: View {
 struct StatisticsView: View {
     @EnvironmentObject private var store: AppStore
     @Environment(\.dismiss) private var dismiss
-    private var watched: [Entry] { store.entries.filter { $0.watched } }
+    @State private var selectedYear = 0
+    private var allWatched: [Entry] { store.entries.filter { $0.watched } }
+    private var watched: [Entry] { allWatched.filter { e in selectedYear == 0 || e.watchedAt.map { Calendar.current.component(.year, from: $0) == selectedYear } == true } }
     private var minutes: Int {
-        store.entries.reduce(0) { sum, e in
-            if e.film.type != "tv" { return sum + (e.watched ? e.film.runtime : 0) }
-            guard e.tracking else { return sum }
-            let previous = e.film.seasonEpisodes.filter { $0.key < e.season }.values.reduce(0, +)
-            return sum + (previous + e.episode) * (e.film.episodeRuntime > 0 ? e.film.episodeRuntime : 45)
-        }
+        (selectedYear == 0 ? store.entries : watched).reduce(0) { $0 + ArchiveStatistics.minutes($1) }
     }
     private var genres: [(String, Int)] { Dictionary(grouping: watched.flatMap { $0.film.genres }, by: { $0 }).map { ($0.key, $0.value.count) }.sorted { $0.1 > $1.1 } }
     private var years: [(Int, Int)] {
-        Dictionary(grouping: watched.compactMap(\.watchedAt), by: { Calendar.current.component(.year, from: $0) }).map { ($0.key, $0.value.count) }.sorted { $0.0 < $1.0 }
+        Dictionary(grouping: allWatched.compactMap(\.watchedAt), by: { Calendar.current.component(.year, from: $0) }).map { ($0.key, $0.value.count) }.sorted { $0.0 < $1.0 }
     }
+    private var directors: [(String, Int)] { Dictionary(grouping: watched.flatMap { $0.film.directors }, by: { $0 }).map { ($0.key, $0.value.count) }.sorted { $0.1 > $1.1 } }
+    private var decades: [(String, Int)] { Dictionary(grouping: watched.compactMap { Int($0.film.year).map { "\($0 / 10 * 10)’ler" } }, by: { $0 }).map { ($0.key, $0.value.count) }.sorted { $0.0 < $1.0 } }
+    private var ratings: [(Int, Int)] { Dictionary(grouping: watched.filter { $0.score > 0 }, by: { $0.score }).map { ($0.key, $0.value.count) }.sorted { $0.0 < $1.0 } }
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Picker("İzleme dönemi", selection: $selectedYear) { Text("Tüm zamanlar").tag(0); ForEach(years, id: \.0) { year, _ in Text(String(year)).tag(year) } }
+                }
                 Section("Sinema yolculuğun") {
                     LabeledContent("Arşivindeki yapımlar", value: String(store.entries.count))
                     LabeledContent("İzlenen filmler", value: String(watched.filter { $0.film.type == "movie" }.count))
@@ -208,6 +211,19 @@ struct StatisticsView: View {
                 if !genres.isEmpty {
                     Section("En çok izlediğin türler") {
                         Chart(Array(genres.prefix(8)), id: \.0) { name, count in BarMark(x: .value("Yapım", count), y: .value("Tür", name)).foregroundStyle(Cinema.gold) }.frame(height: 240)
+                    }
+                }
+                if !directors.isEmpty {
+                    Section("En çok izlediğin yönetmenler") { ForEach(Array(directors.prefix(8)), id: \.0) { name, count in LabeledContent(name, value: String(count)) } }
+                }
+                if !decades.isEmpty {
+                    Section("Yapımların dönemleri") {
+                        Chart(decades, id: \.0) { decade, count in BarMark(x: .value("Dönem", decade), y: .value("Yapım", count)).foregroundStyle(Cinema.gold) }.frame(height: 180)
+                    }
+                }
+                if !ratings.isEmpty {
+                    Section("Puan dağılımın") {
+                        Chart(ratings, id: \.0) { score, count in BarMark(x: .value("Puan", String(score)), y: .value("Yapım", count)).foregroundStyle(Cinema.gold) }.frame(height: 180)
                     }
                 }
                 if !years.isEmpty {

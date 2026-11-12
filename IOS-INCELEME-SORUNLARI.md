@@ -10,17 +10,19 @@ Beş ana ekran, Android ile aynı logo ve afişler, native cam alt menü, çevri
 
 ## Doğrulama
 
-- İlk macOS/Xcode derlemesi: GitHub Actions çalışması 43179339951; sonuç bekleniyor.
+- İlk derleme başarılıydı; CSV CRLF ayrıştırma ve test ortamı hataları otomatik testlerle bulundu ve düzeltildi.
+- GitHub Actions 43180868475: **10 birim/entegrasyon + 2 iPhone arayüz testi başarılı**, 0 hata. Xcode 26.6, iOS 26.5 iPhone 17 Pro Max simülatörü.
+- Gerçek ortak TMDB bağlantısında IMDb kimliği, ayrıntılar, Tom Hardy filmografisi, Dune serisi ve trend sayfalama doğrulandı. İzole test anahtarlarıyla Keychain okuma/yazma/güncelleme geçti. Gerçek kişisel Google AI anahtarı CI'ya taşınmadı; ücretli Gemini üretimini fiziksel iPhone'da kullanıcı test edecek.
 - Birim testleri: Android/web yedek uyumu; film/dizi kimliği çakışması; uzun Unicode notlar; puan, tarih, bölüm koruması; bozuk/yinelenen yedek; BOM; CSV tırnak/virgül/satır sonu; disk bozulması ve kurtarma.
 - iPhone simülatörü testleri: çevrimdışı gezinme, arama, izledim/favori, not düzenleme, arşiv ve API ekranı; büyük yazı ve yatay ekran görüntüleri.
 - Gerçek iPhone testi kullanıcı tarafından yapılacaktır. Bu bilgisayarda USB üzerinden iPhone ekranını kontrol eden bir araç yoktur.
 
 ## TestFlight öncesi açık adımlar
 
-- GitHub/Xcode derleme ve otomatik test sonuçlarının alınması, varsa hataların düzeltilmesi.
-- Ekran görüntülerinin görsel kontrolü.
-- App Store Connect'te yeni iOS uygulama kaydı. Bundle ID Apple API ile kaydedildi: `com.kamilsaim.izlence`; henüz uygulama kaydı yok.
-- iOS Keychain/dosya saklamasını açıklayan gizlilik metninin güncellenmesi.
+- Son istatistik uyarlaması (tam izlenen diziler, sezon ortalaması, yönetmen/dönem/puan dağılımı) için testlerin geçmesi.
+- Ekran görüntüleri kontrol edildi; görselin doğal genişliğinden kaynaklanan hero taşması düzeltildi. Son sürüm ekran görüntüleri teslim edilecek.
+- App Store Connect kaydı kullanıcı tarafından açıldı ve API ile doğrulandı: **6833832918**, SKU `izlence-ios`, bundle `com.kamilsaim.izlence`.
+- iOS Keychain/dosya saklamasını açıklayan gizlilik metni hazırlandı; Firebase önizlemesi doğrulandıktan sonra canlıya taşınacak.
 - Tüm kontrollerden sonra TestFlight yüklemesi ve Apple işleme sonucunun doğrulanması.
 
 **Henüz iPhone'da test edildi veya TestFlight'a yüklendi denemez.** Nihai sonuçlar bu dosyada güncellenecektir. App Store yayını bu çalışmanın kapsamında değildir.

@@ -8,6 +8,7 @@ enum ArchiveError: LocalizedError {
 }
 
 struct Film: Identifiable, Hashable {
+    static let genreNames = [28: "Aksiyon", 12: "Macera", 16: "Animasyon", 35: "Komedi", 80: "Suç", 99: "Belgesel", 18: "Dram", 10751: "Aile", 14: "Fantastik", 36: "Tarih", 27: "Korku", 10402: "Müzik", 9648: "Gizem", 10749: "Romantik", 878: "Bilim-Kurgu", 10770: "TV Filmi", 53: "Gerilim", 10752: "Savaş", 37: "Vahşi Batı", 10759: "Aksiyon ve Macera", 10765: "Bilim-Kurgu ve Fantazi", 10768: "Savaş ve Politik"]
     var number: Int
     var type: String = "movie"
     var title: String
@@ -55,11 +56,12 @@ struct Film: Identifiable, Hashable {
         original = j.text("original"); year = j.text("year"); rating = j.double("rating")
         overview = j.text("overview"); poster = Self.path(j.text("poster")); backdrop = Self.path(j.text("backdrop"))
         genres = j["genres"] as? [String] ?? []; genreIDs = j["genreIds"] as? [Int] ?? []
+        if genres.isEmpty { genres = genreIDs.compactMap { Self.genreNames[$0] } }
         directors = j["directorNames"] as? [String] ?? j.text("director").split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
-        cast = j["castNames"] as? [String] ?? []; runtime = j.int("runtime"); seasons = j.int("seasons")
-        episodes = j.int("episodes"); episodeRuntime = j.int("episodeRuntime")
+        cast = j["castNames"] as? [String] ?? []; runtime = max(0, min(10000, j.int("runtime"))); seasons = max(0, min(1000, j.int("seasons")))
+        episodes = max(0, min(1000000, j.int("episodes"))); episodeRuntime = max(0, min(1440, j.int("episodeRuntime")))
         seasonEpisodes = (j["seasonEpisodes"] as? JSON ?? [:]).reduce(into: [:]) { result, item in
-            if let season = Int(item.key), let count = item.value as? Int { result[season] = max(0, count) }
+            if let season = Int(item.key), season > 0 && season <= 1000, let count = item.value as? Int { result[season] = max(0, min(1000000, count)) }
         }
         lastEpisode = (j["lastEpisode"] as? JSON).map(Episode.init)
         nextEpisode = (j["nextEpisode"] as? JSON).map(Episode.init)
@@ -206,7 +208,7 @@ enum BackupCodec {
             var e = Entry(film: film); e.watched = row.flag("watched"); e.favorite = row.flag("favorite"); e.watchlist = row.flag("watchlist")
             e.note = row.text("note"); e.score = min(10, max(0, row.int("score"))); e.addedAt = date(row["addedAt"]) ?? Date()
             e.watchedAt = date(row["watchedAt"]); e.updatedAt = date(row["updatedAt"]) ?? e.addedAt
-            if let p = row["progress"] as? JSON { e.tracking = true; e.season = max(1, p.int("s")); e.episode = max(0, p.int("e")) }
+            if let p = row["progress"] as? JSON { e.tracking = true; e.season = max(1, min(1000, p.int("s"))); e.episode = max(0, min(1000000, p.int("e"))) }
             result.entries[e.id] = e
         }
         let native = root["native"] as? JSON ?? [:]; let keys = root["keys"] as? JSON ?? [:]
@@ -245,5 +247,15 @@ enum BackupCodec {
             "native": ["preferences": library.preferences.json, "aiPicks": library.aiPicks.map(\.json), "recommendations": library.recommendations.map(\.json), "aiModel": library.model, "recommendationRound": library.round]]
         let bytes = try JSONSerialization.data(withJSONObject: root, options: [.sortedKeys])
         guard bytes.count <= limit else { throw ArchiveError.invalid("Arşiv 32 MB sınırını aşıyor.") }; return bytes
+    }
+}
+
+enum ArchiveStatistics {
+    static func minutes(_ entry: Entry) -> Int {
+        let f = entry.film
+        if f.type == "movie" { return entry.watched ? f.runtime : 0 }
+        let average = f.seasons > 0 ? f.episodes / f.seasons : 0
+        let count = entry.tracking ? (1..<entry.season).reduce(entry.episode) { $0 + (f.seasonEpisodes[$1] ?? average) } : entry.watched ? f.episodes : 0
+        return count * (f.episodeRuntime > 0 ? f.episodeRuntime : 45)
     }
 }

@@ -3,6 +3,15 @@ import Security
 @testable import Izlence
 
 final class ArchiveTests: XCTestCase {
+    func testStatisticsCountsWholeShowsAndPartialProgress() {
+        var show = Film(number: 1, title: "Show", type: "tv"); show.episodes = 20; show.seasons = 2; show.episodeRuntime = 30; show.seasonEpisodes = [1: 10, 2: 10]
+        var entry = Entry(film: show); entry.watched = true
+        XCTAssertEqual(ArchiveStatistics.minutes(entry), 600)
+        entry.watched = false; entry.tracking = true; entry.season = 2; entry.episode = 3
+        XCTAssertEqual(ArchiveStatistics.minutes(entry), 390)
+        entry.film.seasonEpisodes = [:]; XCTAssertEqual(ArchiveStatistics.minutes(entry), 390)
+        entry.film.episodeRuntime = 0; XCTAssertEqual(ArchiveStatistics.minutes(entry), 585)
+    }
     func testKeychainRoundTripAndUpdate() throws {
         let service = "com.kamilsaim.izlence.tests." + UUID().uuidString
         defer { SecItemDelete([kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service] as CFDictionary) }

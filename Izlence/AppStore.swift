@@ -114,7 +114,7 @@ import SwiftUI
         try Task.checkCancellation()
         guard originalKeys == keys, source.preferences == library.preferences else { throw ArchiveError.invalid("API ayarları değişti. Yeniden öneri iste.") }
         guard !picks.isEmpty else { throw ArchiveError.invalid("Yeni bir yapım doğrulanamadı. İsteğini değiştirip yeniden dene.") }
-        var next = library; next.aiPicks = picks; next.memory = memory; next.model = model; try write(next)
+        var next = library; next.aiPicks = picks; if !memory.isEmpty { next.memory = memory }; next.model = model; try write(next)
     }
     func recommendations() async throws {
         let source = library; let client = tmdb
