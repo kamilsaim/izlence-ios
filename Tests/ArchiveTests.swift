@@ -3,6 +3,28 @@ import Security
 @testable import Izlence
 
 final class ArchiveTests: XCTestCase {
+    @MainActor func testWatchedAndDismissedRecommendationsDisappearAndPersist() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let store = AppStore(directory: folder, testing: false, loadKeys: false)
+        let watched = Film(number: 10, title: "Watched")
+        let hidden = Film(number: 20, title: "Hidden")
+        let show = Film(number: 10, title: "Same-number TV", type: "tv")
+        var saved = Entry(film: watched); saved.note = "Notum korunmalı"; saved.favorite = true; store.save(saved)
+        store.toggle(watched, flag: "watched")
+        store.dismiss(hidden)
+        XCTAssertEqual(store.visibleRecommendations([watched, hidden, show, show]).map(\.id), [show.id])
+        XCTAssertEqual(store.library.entries[watched.id]?.note, saved.note)
+        XCTAssertTrue(store.library.entries[watched.id]?.favorite == true)
+        let reopened = AppStore(directory: folder, testing: false, loadKeys: false)
+        XCTAssertFalse(reopened.isRecommendationVisible(watched)); XCTAssertFalse(reopened.isRecommendationVisible(hidden))
+        XCTAssertTrue(reopened.isRecommendationVisible(show))
+        let exported = try BackupCodec.decode(reopened.backup())
+        XCTAssertTrue(exported.dismissed.contains(hidden.id)); XCTAssertTrue(exported.entries[watched.id]?.watched == true)
+        reopened.toggle(watched, flag: "watched")
+        XCTAssertTrue(reopened.isRecommendationVisible(watched))
+        XCTAssertFalse(reopened.isRecommendationVisible(hidden))
+    }
     func testStatisticsCountsWholeShowsAndPartialProgress() {
         var show = Film(number: 1, title: "Show", type: "tv"); show.episodes = 20; show.seasons = 2; show.episodeRuntime = 30; show.seasonEpisodes = [1: 10, 2: 10]
         var entry = Entry(film: show); entry.watched = true

@@ -84,15 +84,35 @@ struct FilmArt: View {
 
 struct FilmCard: View {
     var film: Film
+    var showRecommendationActions = true
     var body: some View {
-        NavigationLink(value: film) {
-            VStack(alignment: .leading, spacing: 8) {
-                FilmArt(film: film).frame(width: 136, height: 196).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(alignment: .topTrailing) { Text(film.rating, format: .number.precision(.fractionLength(1))).font(.caption.bold()).padding(6).background(.ultraThinMaterial, in: Capsule()).padding(8) }
-                Text(film.title).font(.subheadline.bold()).lineLimit(2).foregroundStyle(.white)
-                Text("\(film.year) · \(film.label)").font(.caption).foregroundStyle(Cinema.muted)
-            }.frame(width: 136, alignment: .topLeading)
-        }.buttonStyle(.plain).accessibilityElement(children: .combine)
+        ZStack(alignment: .topTrailing) {
+            NavigationLink(value: film) {
+                VStack(alignment: .leading, spacing: 8) {
+                    FilmArt(film: film).frame(width: 136, height: 196).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(alignment: .topLeading) { Text(film.rating, format: .number.precision(.fractionLength(1))).font(.caption.bold()).padding(6).background(.ultraThinMaterial, in: Capsule()).padding(8) }
+                    Text(film.title).font(.subheadline.bold()).lineLimit(2).foregroundStyle(.white)
+                    Text("\(film.year) · \(film.label)").font(.caption).foregroundStyle(Cinema.muted)
+                }.frame(width: 136, alignment: .topLeading)
+            }.buttonStyle(.plain).accessibilityElement(children: .combine)
+            if showRecommendationActions { RecommendationMenu(film: film).padding(6) }
+        }
+    }
+}
+
+struct RecommendationMenu: View {
+    var film: Film
+    @EnvironmentObject private var store: AppStore
+    var body: some View {
+        Menu {
+            Button("İzledim", systemImage: "checkmark.circle") { store.toggle(film, flag: "watched") }
+                .accessibilityIdentifier("recommendation-watched")
+            Button("Bunu bir daha önerme", systemImage: "eye.slash") { store.dismiss(film) }
+                .accessibilityIdentifier("recommendation-dismiss")
+        } label: {
+            Image(systemName: "ellipsis").font(.headline).frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Circle()).foregroundStyle(Cinema.gold)
+        }.accessibilityLabel("\(film.title) öneri seçenekleri").accessibilityIdentifier("recommendation-menu-\(film.id)")
     }
 }
 
@@ -100,19 +120,26 @@ struct FilmShelf: View {
     var title: String
     var subtitle = ""
     var films: [Film]
+    var showRecommendationActions = true
     var body: some View {
+        if !films.isEmpty {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) { Text(title).font(.title2.bold()); if !subtitle.isEmpty { Text(subtitle).font(.subheadline).foregroundStyle(Cinema.muted) } }.padding(.horizontal, 20)
-            ScrollView(.horizontal) { LazyHStack(alignment: .top, spacing: 16) { ForEach(films) { FilmCard(film: $0) } }.padding(.horizontal, 20) }.scrollIndicators(.hidden)
+            ScrollView(.horizontal) { LazyHStack(alignment: .top, spacing: 16) { ForEach(films) { FilmCard(film: $0, showRecommendationActions: showRecommendationActions) } }.padding(.horizontal, 20) }.scrollIndicators(.hidden)
+        }
         }
     }
 }
 
 struct HomeView: View {
     @EnvironmentObject private var store: AppStore
-    @State private var hero = 0
+    @State private var hero = ""
     @ScaledMetric(relativeTo: .title) private var heroHeight: CGFloat = 360
-    private var highlights: [Film] { [693134, 157336, 872585].compactMap { id in store.catalog.first { $0.number == id } } }
+    private var available: [Film] { store.visibleRecommendations(store.catalog) }
+    private var highlights: [Film] {
+        let preferred = [693134, 157336, 872585].compactMap { id in store.catalog.first { $0.number == id && $0.type == "movie" } }
+        return Array(store.visibleRecommendations(preferred + store.catalog).prefix(3))
+    }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
@@ -123,7 +150,8 @@ struct HomeView: View {
                 }.padding(.horizontal, 20)
                 if !highlights.isEmpty {
                     TabView(selection: $hero) {
-                        ForEach(Array(highlights.enumerated()), id: \.element.id) { index, film in
+                        ForEach(highlights) { film in
+                            ZStack(alignment: .topTrailing) {
                             NavigationLink(value: film) {
                                 ZStack(alignment: .bottomLeading) {
                                     FilmArt(film: film, wide: true).frame(height: heroHeight).clipped()
@@ -135,24 +163,29 @@ struct HomeView: View {
                                         Label("Yapımı keşfet", systemImage: "arrow.up.right").font(.subheadline.bold()).foregroundStyle(Cinema.gold).padding(.top, 4)
                                     }.padding(24).padding(.bottom, 16)
                                 }.clipShape(RoundedRectangle(cornerRadius: 24)).padding(.horizontal, 20)
-                            }.buttonStyle(.plain).tag(index)
+                            }.buttonStyle(.plain)
+                            RecommendationMenu(film: film).padding(.top, 12).padding(.trailing, 32)
+                            }.tag(film.id)
                         }
                     }.tabViewStyle(.page(indexDisplayMode: .automatic)).frame(height: heroHeight)
+                } else {
+                    EmptyState(title: "Yeni bir hikâye arayalım", message: "Keşfet sekmesinden yeni yapımlar bulabilirsin. İzlediklerin ve gizlediğin öneriler burada gösterilmez.", icon: "sparkles")
                 }
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 12) { counts }
                     VStack(spacing: 12) { counts }
                 }.padding(.horizontal, 20)
                 if !store.entries.filter({ $0.tracking }).isEmpty {
-                    FilmShelf(title: "Kaldığın yerden", subtitle: "Takip ettiğin diziler", films: store.entries.filter { $0.tracking }.map(\.film))
+                    FilmShelf(title: "Kaldığın yerden", subtitle: "Takip ettiğin diziler", films: store.entries.filter { $0.tracking && !$0.watched }.map(\.film), showRecommendationActions: false)
                 }
-                FilmShelf(title: "Sinemanın iz bırakanları", subtitle: "Arşivine ekleyeceğin yeni hikâyeler", films: store.catalog.filter { $0.type == "movie" })
-                FilmShelf(title: "Bir bölüm daha", films: store.catalog.filter { $0.type == "tv" })
+                FilmShelf(title: "Sinemanın iz bırakanları", subtitle: "Arşivine ekleyeceğin yeni hikâyeler", films: available.filter { $0.type == "movie" })
+                FilmShelf(title: "Bir bölüm daha", films: available.filter { $0.type == "tv" })
                 Text("Film bilgileri ve görseller TMDB tarafından sağlanır. Bu ürün TMDB API’sini kullanır; TMDB tarafından onaylanmış veya sertifikalandırılmış değildir.")
                     .font(.caption).foregroundStyle(Cinema.muted).padding(.horizontal, 20)
             }.padding(.vertical, 16).padding(.bottom, 24).frame(maxWidth: 900)
                 .frame(maxWidth: .infinity)
         }.navigationTitle("").toolbar(.hidden, for: .navigationBar)
+            .onChange(of: highlights.map(\.id), initial: true) { _, ids in if !ids.contains(hero) { hero = ids.first ?? "" } }
     }
     @ViewBuilder private var counts: some View {
         count("İzledim", number: store.entries.filter { $0.watched }.count, icon: "checkmark.circle")
@@ -269,11 +302,12 @@ struct DiscoverView: View {
         }
     }
     @ViewBuilder private func picks(_ items: [Pick]) -> some View {
-        if items.isEmpty { EmptyState(title: "Yeni favorin burada başlayabilir", message: "Arşivine yapımlar ekle, puan ver ve önerilerini hazırla.", icon: "sparkles") }
-        ForEach(items) { pick in
+        let visible = items.filter { store.isRecommendationVisible($0.film) }
+        if visible.isEmpty { EmptyState(title: "Yeni favorin burada başlayabilir", message: "Arşivine yapımlar ekle, puan ver ve önerilerini hazırla.", icon: "sparkles") }
+        ForEach(visible) { pick in
             VStack(alignment: .leading, spacing: 8) {
                 FilmRow(film: pick.film, subtitle: pick.reason)
-                HStack { Button("İzleyeceğim", systemImage: "bookmark") { store.toggle(pick.film, flag: "watchlist") }; Spacer(); Button("İlgilenmiyorum") { store.dismiss(pick.film) } }.font(.subheadline).frame(minHeight: 44)
+                HStack { Button("İzleyeceğim", systemImage: "bookmark") { store.toggle(pick.film, flag: "watchlist") }; Spacer(); Button("Bunu bir daha önerme") { store.dismiss(pick.film) } }.font(.subheadline).frame(minHeight: 44)
             }
         }
     }

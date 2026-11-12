@@ -1,6 +1,24 @@
 import XCTest
 
 final class NavigationTests: XCTestCase {
+    @MainActor func testHomeRecommendationActionsRemoveWatchedAndDismissedCards() throws {
+        let app = XCUIApplication(); app.launchArguments = ["-ui-testing"]; app.launch()
+        let dune = app.buttons.matching(identifier: "recommendation-menu-movie-693134").firstMatch
+        XCTAssertTrue(dune.waitForExistence(timeout: 15)); dune.tap()
+        app.buttons["recommendation-watched"].tap()
+        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: dune)
+        wait(for: [gone], timeout: 5)
+        let interstellar = app.buttons.matching(identifier: "recommendation-menu-movie-157336").firstMatch
+        XCTAssertTrue(interstellar.waitForExistence(timeout: 5)); interstellar.tap()
+        app.buttons["recommendation-dismiss"].tap()
+        let hidden = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: interstellar)
+        wait(for: [hidden], timeout: 5)
+        capture("09-oneri-secimleri")
+        app.tabBars.buttons["Arşivim"].tap()
+        XCTAssertTrue(app.buttons["film-movie-693134"].firstMatch.waitForExistence(timeout: 5))
+        app.tabBars.buttons["Profil"].tap()
+        XCTAssertTrue(app.buttons["Gizlediğim önerileri sıfırla (1)"].exists)
+    }
     @MainActor func testOfflineNavigationArchiveAndScreenshots() throws {
         let app = XCUIApplication(); app.launchArguments = ["-ui-testing"]; app.launch()
         XCTAssertTrue(app.staticTexts["Bu akşam ne izlesek?"].waitForExistence(timeout: 15))

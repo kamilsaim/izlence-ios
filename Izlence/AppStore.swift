@@ -31,6 +31,13 @@ import SwiftUI
     }
     var tmdb: TMDBClient { TMDBClient(key: keys.tmdb, preferences: library.preferences) }
     var entries: [Entry] { library.entries.values.sorted { $0.updatedAt > $1.updatedAt } }
+    func isRecommendationVisible(_ film: Film) -> Bool {
+        library.entries[film.id]?.watched != true && !library.dismissed.contains(film.id)
+    }
+    func visibleRecommendations(_ films: [Film]) -> [Film] {
+        var seen = Set<String>()
+        return films.filter { isRecommendationVisible($0) && seen.insert($0.id).inserted }
+    }
 
     private func write(_ next: Library, recovering: Bool = false) throws {
         guard !storageFailure || recovering else { throw ArchiveError.invalid("Önce arşiv yedeğini geri yükle; mevcut dosya korunuyor.") }

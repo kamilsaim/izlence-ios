@@ -70,7 +70,7 @@ struct DetailView: View {
                     }
                     if entry != nil { Button("Arşivimden kaldır", role: .destructive) { remove = true }.frame(minHeight: 44) }
                 }.padding(.horizontal, 20)
-                if !related.isEmpty { FilmShelf(title: "Benzer hikâyeler", films: related) }
+                if !related.isEmpty { FilmShelf(title: "Benzer hikâyeler", films: store.visibleRecommendations(related)) }
             }.padding(.bottom, 32).frame(maxWidth: 900).frame(maxWidth: .infinity)
         }.background(Cinema.background).navigationBarTitleDisplayMode(.inline)
             .task(id: initial.id) { await load() }

@@ -24,6 +24,7 @@ struct ProfileView: View {
     @State private var importConfirm = false
     @State private var wipe = false
     @State private var wipeKeys = false
+    @State private var resetDismissed = false
     var body: some View {
         Form {
             Section { BrandHeader().padding(.vertical, 12).listRowBackground(Cinema.background) }
@@ -31,6 +32,11 @@ struct ProfileView: View {
                 Button { statistics = true } label: { Label("İzleme istatistiklerim", systemImage: "chart.bar.xaxis") }
                 Button { contentSettings = true } label: { Label("Dil, ülke ve yayın platformları", systemImage: "globe") }
                 Button { apiSettings = true } label: { Label("API ayarlarım", systemImage: "key") }
+            }
+            if !store.library.dismissed.isEmpty {
+                Section("Öneri tercihlerim") {
+                    Button("Gizlediğim önerileri sıfırla (\(store.library.dismissed.count))") { resetDismissed = true }
+                }
             }
             Section {
                 Button { do { backup = JSONDocument(data: try store.backup()); exporting = true } catch { store.error = error.localizedDescription } } label: { Label("JSON yedeği dışa aktar", systemImage: "square.and.arrow.up") }
@@ -79,6 +85,9 @@ struct ProfileView: View {
             .confirmationDialog("İki API anahtarı da silinsin mi?", isPresented: $wipeKeys, titleVisibility: .visible) {
                 Button("Anahtarları sil", role: .destructive) { do { try store.saveKeys(tmdb: "", google: "") } catch { store.error = error.localizedDescription } }
             }
+            .confirmationDialog("Gizlediğin öneriler yeniden gösterilebilsin mi?", isPresented: $resetDismissed, titleVisibility: .visible) {
+                Button("Öneri gizlemelerini sıfırla") { store.apply { $0.dismissed = [] } }
+            } message: { Text("Gizlediğin yapımlar yeniden önerilebilir. İzlenen yapımlar önerilmez.") }
     }
     private func restore(replace: Bool) {
         guard let pending else { return }
