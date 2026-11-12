@@ -32,7 +32,7 @@ IMDb CSV aktarımı tüm eşleştirmeler bitince tek seferde yazılır. İptal v
 
 ## Apple / GitHub yapılandırması
 
-Bundle ID: `com.kamilsaim.izlence`. Takım: `NBTXFU47EV`. İlk iOS sürümü: `1.0.0`. GitHub deposu gizlidir: https://github.com/kamilsaim/izlence-ios
+Bundle ID: `com.kamilsaim.izlence`. Takım: `NBTXFU47EV`. İlk iOS sürümü: `1.0.0`. GitHub deposu kullanıcının onayıyla herkese açıktır: https://github.com/kamilsaim/izlence-ios . Standart macOS GitHub Actions derleyicileri kullanılır.
 
 Actions secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64`, `DIST_CERT_P12_BASE64`, `DIST_CERT_PASSWORD`. Sertifika veya özel anahtar dosyaları depoya alınmaz. Ortak mevcut dağıtım sertifikası kullanılır; yeni sertifika üretilmez. TestFlight için Apple web ekranındaki uygulama kaydının ayrıca mevcut olması gerekir.
 

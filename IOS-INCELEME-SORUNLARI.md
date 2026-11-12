@@ -1,39 +1,38 @@
-# İzlence iOS — doğrulama ve yayın durumu
+# İzlence iOS — test ve TestFlight sonucu
 
-Tarih: 12 Kasım 2026.
+12 Kasım 2026.
 
-SwiftUI uygulaması `C:\mac\izlence` klasöründe hazırlanmıştır. Android/web kaynakları ve yayımlanan Android AAB değiştirilmemiştir.
+**1.0.0 (42)**, App Store Connect **6833832918** kaydına yüklendi. Apple işleme durumu **VALID**. Derleme **İzlence İç Test** grubuna bağlandı ve kullanıcının kendi testçi üyeliği doğrulandı. Fiziksel iPhone testi kullanıcı tarafından yapılacak; App Store incelemesine/yayınına gönderilmedi.
 
-## Uygulananlar
+## Kaynak ve dağıtım
 
-Beş ana ekran, Android ile aynı logo ve afişler, native cam alt menü, çevrimdışı örnek katalog, TMDB arama/ayrıntı/platform/seri bağlantıları, puan/not/listeler, dizi ilerlemesi, klasik ve Gemini önerileri, iki API anahtarı ve model seçimi, JSON yedek aktarımı, IMDb CSV ve istatistikler uygulanmıştır. Özellikler için README'ye bakınız.
+- Bundle ID: `com.kamilsaim.izlence`; takım: `NBTXFU47EV`.
+- Depo kullanıcı onayıyla herkese açıldı: https://github.com/kamilsaim/izlence-ios
+- Yüklenen uygulama kodu: `43e470b7844a22de82003ddd8240053aef3c3096`. Sonraki belge güncellemeleri uygulama kodunu değiştirmez.
+- GitHub Actions: https://github.com/kamilsaim/izlence-ios/actions/runs/43181446982 (ikinci deneme).
+- Önceki gizli depo kota engeli, depoyu herkese açarak aşıldı. Hesabın ödeme veya harcama ayarları değiştirilmedi.
+- Açmadan önce 86 Git geçmişi blob'u, yerel Apple özel anahtar/sertifika/parola değerleri ve anahtar kalıplarıyla tarandı; eşleşme bulunmadı. İmzalama dosyaları GitHub Secrets üzerinden kullanılır; kaynakta yer almaz.
 
-## Doğrulama
+## Doğrulananlar
 
-- İlk derleme başarılıydı; CSV CRLF ayrıştırma ve test ortamı hataları otomatik testlerle bulundu ve düzeltildi.
-- GitHub Actions 43180868475: **10 birim/entegrasyon + 2 iPhone arayüz testi başarılı**, 0 hata. Xcode 26.6, iOS 26.5 iPhone 17 Pro Max simülatörü.
-- Gerçek ortak TMDB bağlantısında IMDb kimliği, ayrıntılar, Tom Hardy filmografisi, Dune serisi ve trend sayfalama doğrulandı. İzole test anahtarlarıyla Keychain okuma/yazma/güncelleme geçti. Gerçek kişisel Google AI anahtarı CI'ya taşınmadı; ücretli Gemini üretimini fiziksel iPhone'da kullanıcı test edecek.
-- Birim testleri: Android/web yedek uyumu; film/dizi kimliği çakışması; uzun Unicode notlar; puan, tarih, bölüm koruması; bozuk/yinelenen yedek; BOM; CSV tırnak/virgül/satır sonu; disk bozulması ve kurtarma.
-- iPhone simülatörü testleri: çevrimdışı gezinme, arama, izledim/favori, not düzenleme, arşiv ve API ekranı; büyük yazı ve yatay ekran görüntüleri.
-- Gerçek iPhone testi kullanıcı tarafından yapılacaktır. Bu bilgisayarda USB üzerinden iPhone ekranını kontrol eden bir araç yoktur.
+**11 birim/entegrasyon + 2 arayüz testi geçti; 0 hata.** Xcode 26.6, iOS 26.5, iPhone 17 Pro Max simülatörü kullanıldı.
 
-## Son durum: GitHub ücretsiz kotası doldu
+- Android/web JSON yedeğinde aynı sayısal film/dizi kimliğinin ayrı tutulması; puan, tarih, listeler, bölüm ve uzun Unicode notların korunması.
+- Bozuk/yinelenen/geçersiz yedeğin reddedilmesi; mevcut arşivin korunması, diske tekrar açılışta kayıtların gelmesi ve kurtarma kopyası.
+- IMDb CSV içinde Windows CRLF satır sonu, virgül, tırnak, çok satırlı alanlar, yinelenen IMDb kimliği ve tarih/puan ayrıştırması.
+- Ayrı test alanında Keychain okuma, yazma ve güncelleme.
+- Gerçek ortak TMDB bağlantısıyla IMDb bulma, ayrıntı, Tom Hardy filmografisi, Dune serisi ve farklı trend sayfaları.
+- Tam izlenen dizi ve kısmi bölüm ilerlemesinden süre hesaplama; sezon sayısı ortalaması ve bilinmeyen bölüm süresi varsayımı.
+- Beş sekme, çevrimdışı katalog araması, izledim/favori, not kaydetme, arşiv ve API ekranı; büyük yazı ve yatay ekran görüntüleri.
 
-- Son uygulama kodu commit'i: `43e470b7844a22de82003ddd8240053aef3c3096`.
-- Son istatistik uyarlaması (tam izlenen diziler, sezon ortalaması, yönetmen/dönem/puan dağılımı) için test eklendi; bu son commit'in testleri henüz çalışamadı.
-- GitHub Actions çalışması **43181446982**, testflight=true girdisiyle başlatıldı; hesap kotası nedeniyle **hiçbir iş adımı başlamadan** engellendi. TestFlight işi atlandı. Bu sonuç kod/derleme hatası değildir.
-- GitHub API ile doğrulama: hesap Free; Kasım 2026 gizli depo hesaplama kullanımı **12,00 USD**, ek ücret **0,00 USD**. Free aylık hesaplama hakkı 12 USD. macOS 184,645161 dakika ve gizli depolarda Linux 92 dakika kullanılmış. Herkese açık depoların ücretsiz kullanımı bu toplama dahil edilmedi.
-- Hesabın bütçe/ödeme ayarı değiştirilmedi. Kullanıcı engelin kalktığını bildirdikten sonra `gh run rerun 43181446982 --failed -R kamilsaim/izlence-ios` ile aynı sürüm ve aynı kaynak üzerinden devam edilebilir. İş akışı, başarılı testlerden sonra imzalı IPA'yı TestFlight'a yükler. Tekrar başlamadan Apple'da yeni bir build oluşmadığı ve kaynak SHA kontrol edilmelidir.
-- Ekran görüntüleri kontrol edildi; görselin doğal genişliğinden kaynaklanan hero taşması düzeltildi. Son sürüm ekran görüntüleri teslim edilecek.
-- App Store Connect kaydı kullanıcı tarafından açıldı ve API ile doğrulandı: **6833832918**, SKU `izlence-ios`, bundle `com.kamilsaim.izlence`.
-- iOS Keychain/dosya saklamasını açıklayan gizlilik metni Firebase önizlemesinde doğrulandı ve canlıya taşındı: https://izlence.web.app/gizlilik.html . app.js, sw.js, index.html ve version.json dosyalarının mevcut canlı sürümle aynı olduğu doğrulandı.
-- Türkçe TestFlight açıklaması/geri bildirim adresi ve **İzlence İç Test** grubu hazırlandı. Derleme yokken testçi erişimi doğrulanamaz; yüklemeden sonra kullanıcının iç test grubuna erişimi kontrol edilecektir.
-- Tüm kontrollerden sonra TestFlight yüklemesi ve Apple işleme sonucunun doğrulanması.
+Son test kaydı `basarili-test-kaydi.log`; sekiz ekran görüntüsü bu teslim klasöründedir. İlk bulunan CSV ve hero görsel taşma sorunları düzeltildi.
 
-**Henüz fiziksel iPhone'da test edildi veya TestFlight'a yüklendi denemez.** Son kodun doğrulaması ve yüklemesi, kota engelinin kalkmasını bekliyor. Kaynak ve ekran görüntüleri teslim klasöründe saklanır. App Store yayını bu çalışmanın kapsamında değildir.
+## Uygulanan özellikler
 
-## Kaynaklar
+SwiftUI ile beş ekran, Android'deki logo/renkler, iOS sisteminin cam alt menüsü, çevrimdışı görseller, canlı arama/tür/yıl/kişi/IMDb/seri/anahtar kelime araması ve sayfalama; izledim/izleyeceğim/favori; puan/not; dizi takibi; seri taraması; platform/benzer/fragman/IMDb bağlantıları; Gemini ve klasik kişisel öneriler; model/dil/ülke/platform seçimi; JSON yedek aktarımı; IMDb CSV ve istatistikler.
 
-- GitHub ücretsiz kullanım: https://docs.github.com/en/billing/concepts/product-billing/github-actions
-- Başarılı test: https://github.com/kamilsaim/izlence-ios/actions/runs/43180868475
-- Hesap kotası nedeniyle başlamayan son iş: https://github.com/kamilsaim/izlence-ios/actions/runs/43181446982
+TMDB anahtarı isteğe bağlıdır; boşken Android/web ile aynı ortak bağlantı kullanılır. Kendi Google AI anahtarı Profil'den girilir; anahtarlar Keychain'de saklanır ve JSON yedeğine eklenmez. AI isteği öncesinde veri gönderimi açıklanır; kişisel film notları gönderilmez. Güncel gizlilik metni: https://izlence.web.app/gizlilik.html
+
+## iPhone'da kullanıcı testi
+
+`IPHONE-TEST-NOTLARI.md` dosyasındaki adımlarla test edilebilir. Gerçek kişisel Gemini anahtarı CI'ya kopyalanmadı ve ücretli Gemini üretim testi iOS'ta yapılmadı. Bu ve fiziksel cihaz davranışları kullanıcı testinde doğrulanacak. Cihazlar arasında otomatik eşitleme yoktur; arşiv JSON yedeğiyle taşınır.
