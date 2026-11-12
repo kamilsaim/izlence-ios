@@ -1,3 +1,9 @@
+## Son güncelleme — öneriler ve arayüz (build 61)
+
+12 Kasım 2026: TestFlight 1.0.0 (61), VALID / IN_BETA_TESTING olarak doğrulandı. 12 birim/entegrasyon + 4 arayüz testi geçti. İzlenen/gizlenen öneriler elenir; ana sayfa kategori kısayolları ve arşiv ikonları tamamlandı. App Store Connect: Türkçe bilgiler + altı iPhone / bir iPad ekran görüntüsü taslakta; App Review gönderilmedi. Ayrıntılar IOS-ONERI-VE-ARAYUZ-DUZELTMELERI.md dosyasında.
+
+Önceki build 42 kaydı aşağıda tarihçe olarak korunur.
+
 # İzlence iOS — test ve TestFlight sonucu
 
 12 Kasım 2026.
