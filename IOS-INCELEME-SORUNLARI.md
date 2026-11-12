@@ -17,12 +17,23 @@ Beş ana ekran, Android ile aynı logo ve afişler, native cam alt menü, çevri
 - iPhone simülatörü testleri: çevrimdışı gezinme, arama, izledim/favori, not düzenleme, arşiv ve API ekranı; büyük yazı ve yatay ekran görüntüleri.
 - Gerçek iPhone testi kullanıcı tarafından yapılacaktır. Bu bilgisayarda USB üzerinden iPhone ekranını kontrol eden bir araç yoktur.
 
-## TestFlight öncesi açık adımlar
+## Son durum: GitHub ücretsiz kotası doldu
 
-- Son istatistik uyarlaması (tam izlenen diziler, sezon ortalaması, yönetmen/dönem/puan dağılımı) için testlerin geçmesi.
+- Son uygulama kodu commit'i: `43e470b7844a22de82003ddd8240053aef3c3096`.
+- Son istatistik uyarlaması (tam izlenen diziler, sezon ortalaması, yönetmen/dönem/puan dağılımı) için test eklendi; bu son commit'in testleri henüz çalışamadı.
+- GitHub Actions çalışması **43181446982**, testflight=true girdisiyle başlatıldı; hesap kotası nedeniyle **hiçbir iş adımı başlamadan** engellendi. TestFlight işi atlandı. Bu sonuç kod/derleme hatası değildir.
+- GitHub API ile doğrulama: hesap Free; Kasım 2026 gizli depo hesaplama kullanımı **12,00 USD**, ek ücret **0,00 USD**. Free aylık hesaplama hakkı 12 USD. macOS 184,645161 dakika ve gizli depolarda Linux 92 dakika kullanılmış. Herkese açık depoların ücretsiz kullanımı bu toplama dahil edilmedi.
+- Hesabın bütçe/ödeme ayarı değiştirilmedi. Kullanıcı engelin kalktığını bildirdikten sonra `gh run rerun 43181446982 --failed -R kamilsaim/izlence-ios` ile aynı sürüm ve aynı kaynak üzerinden devam edilebilir. İş akışı, başarılı testlerden sonra imzalı IPA'yı TestFlight'a yükler. Tekrar başlamadan Apple'da yeni bir build oluşmadığı ve kaynak SHA kontrol edilmelidir.
 - Ekran görüntüleri kontrol edildi; görselin doğal genişliğinden kaynaklanan hero taşması düzeltildi. Son sürüm ekran görüntüleri teslim edilecek.
 - App Store Connect kaydı kullanıcı tarafından açıldı ve API ile doğrulandı: **6833832918**, SKU `izlence-ios`, bundle `com.kamilsaim.izlence`.
-- iOS Keychain/dosya saklamasını açıklayan gizlilik metni hazırlandı; Firebase önizlemesi doğrulandıktan sonra canlıya taşınacak.
+- iOS Keychain/dosya saklamasını açıklayan gizlilik metni Firebase önizlemesinde doğrulandı ve canlıya taşındı: https://izlence.web.app/gizlilik.html . app.js, sw.js, index.html ve version.json dosyalarının mevcut canlı sürümle aynı olduğu doğrulandı.
+- Türkçe TestFlight açıklaması/geri bildirim adresi ve **İzlence İç Test** grubu hazırlandı. Derleme yokken testçi erişimi doğrulanamaz; yüklemeden sonra kullanıcının iç test grubuna erişimi kontrol edilecektir.
 - Tüm kontrollerden sonra TestFlight yüklemesi ve Apple işleme sonucunun doğrulanması.
 
-**Henüz iPhone'da test edildi veya TestFlight'a yüklendi denemez.** Nihai sonuçlar bu dosyada güncellenecektir. App Store yayını bu çalışmanın kapsamında değildir.
+**Henüz fiziksel iPhone'da test edildi veya TestFlight'a yüklendi denemez.** Son kodun doğrulaması ve yüklemesi, kota engelinin kalkmasını bekliyor. Kaynak ve ekran görüntüleri teslim klasöründe saklanır. App Store yayını bu çalışmanın kapsamında değildir.
+
+## Kaynaklar
+
+- GitHub ücretsiz kullanım: https://docs.github.com/en/billing/concepts/product-billing/github-actions
+- Başarılı test: https://github.com/kamilsaim/izlence-ios/actions/runs/43180868475
+- Hesap kotası nedeniyle başlamayan son iş: https://github.com/kamilsaim/izlence-ios/actions/runs/43181446982
