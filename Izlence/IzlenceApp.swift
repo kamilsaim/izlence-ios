@@ -67,12 +67,14 @@ struct FilmArt: View {
     private var localName: String { "\(film.id)-\(wide ? "backdrop" : "poster")" }
     private var path: String { wide ? film.backdrop : film.poster }
     var body: some View {
-        Group {
-            if store.catalog.contains(where: { $0.id == film.id }) {
-                Image(localName).resizable().scaledToFill()
-            } else if !path.isEmpty, let url = URL(string: "https://image.tmdb.org/t/p/\(wide ? "w780" : "w342")\(path)") {
-                AsyncImage(url: url) { image in image.resizable().scaledToFill() } placeholder: { placeholder }
-            } else { placeholder }
+        GeometryReader { geometry in
+            Group {
+                if store.catalog.contains(where: { $0.id == film.id }) {
+                    Image(localName).resizable().scaledToFill()
+                } else if !path.isEmpty, let url = URL(string: "https://image.tmdb.org/t/p/\(wide ? "w780" : "w342")\(path)") {
+                    AsyncImage(url: url) { image in image.resizable().scaledToFill() } placeholder: { placeholder }
+                } else { placeholder }
+            }.frame(width: geometry.size.width, height: geometry.size.height).clipped()
         }.accessibilityHidden(true)
     }
     private var placeholder: some View {
@@ -109,6 +111,7 @@ struct FilmShelf: View {
 struct HomeView: View {
     @EnvironmentObject private var store: AppStore
     @State private var hero = 0
+    @ScaledMetric(relativeTo: .title) private var heroHeight: CGFloat = 360
     private var highlights: [Film] { [693134, 157336, 872585].compactMap { id in store.catalog.first { $0.number == id } } }
     var body: some View {
         ScrollView {
@@ -123,18 +126,18 @@ struct HomeView: View {
                         ForEach(Array(highlights.enumerated()), id: \.element.id) { index, film in
                             NavigationLink(value: film) {
                                 ZStack(alignment: .bottomLeading) {
-                                    FilmArt(film: film, wide: true).frame(height: 320).clipped()
+                                    FilmArt(film: film, wide: true).frame(height: heroHeight).clipped()
                                     LinearGradient(colors: [.clear, Cinema.background.opacity(0.95)], startPoint: .center, endPoint: .bottom)
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("GECENİN SEÇİMİ").font(.caption.bold()).tracking(2).foregroundStyle(Cinema.gold)
-                                        Text(film.title).font(.system(.largeTitle, design: .serif, weight: .bold)).foregroundStyle(.white)
+                                        Text(film.title).font(.system(.title, design: .serif, weight: .bold)).foregroundStyle(.white).fixedSize(horizontal: false, vertical: true)
                                         Text("\(film.year)  ·  ★ \(film.rating.formatted(.number.precision(.fractionLength(1))))  ·  \(film.label)").font(.subheadline).foregroundStyle(Cinema.muted)
                                         Label("Yapımı keşfet", systemImage: "arrow.up.right").font(.subheadline.bold()).foregroundStyle(Cinema.gold).padding(.top, 4)
                                     }.padding(24).padding(.bottom, 16)
                                 }.clipShape(RoundedRectangle(cornerRadius: 24)).padding(.horizontal, 20)
                             }.buttonStyle(.plain).tag(index)
                         }
-                    }.tabViewStyle(.page(indexDisplayMode: .automatic)).frame(height: 320)
+                    }.tabViewStyle(.page(indexDisplayMode: .automatic)).frame(height: heroHeight)
                 }
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 12) { counts }
@@ -177,7 +180,7 @@ struct FilmRow: View {
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(Cinema.muted)
             }.padding(12).background(Cinema.surface, in: RoundedRectangle(cornerRadius: 16))
-        }.buttonStyle(.plain).accessibilityElement(children: .combine)
+        }.buttonStyle(.plain).accessibilityElement(children: .combine).accessibilityIdentifier("film-\(film.id)")
     }
 }
 
@@ -200,6 +203,7 @@ struct DiscoverView: View {
     @State private var ask = ""
     @State private var consent = false
     @State private var searchTask: Task<Void, Never>?
+    @State private var searchID = UUID()
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -212,7 +216,7 @@ struct DiscoverView: View {
                     picks(store.library.recommendations)
                 } else { aiSection }
             }.padding(20).frame(maxWidth: 800).frame(maxWidth: .infinity)
-        }.navigationTitle("Keşfet").onDisappear { searchTask?.cancel() }
+        }.navigationTitle("Keşfet").onDisappear { cancelSearch() }
             .confirmationDialog("Gemini’ye öneri isteği gönderilsin mi?", isPresented: $consent, titleVisibility: .visible) {
                 Button("Gönder ve öneri hazırla") { store.perform { try await store.generateAI(ask) } }
             } message: { Text("Yapım adları, puanlar, favoriler, türler, zevk özeti ve buradaki isteğin Google’a gönderilir. Kişisel notların gönderilmez. Kendi Google AI kotan kullanılır.") }
@@ -224,7 +228,7 @@ struct DiscoverView: View {
                 Button { search(reset: true) } label: { Image(systemName: "magnifyingglass").frame(width: 44, height: 44) }.accessibilityLabel("Ara")
             }
             if store.keys.tmdb.isEmpty { Text("Şimdilik örnek katalogda arıyorsun. Tüm yapımlar için Profil’den TMDB anahtarını ekle.").font(.footnote).foregroundStyle(Cinema.muted) }
-            if loading { HStack { ProgressView(); Text("Yapımlar aranıyor…"); Spacer(); Button("İptal") { searchTask?.cancel() } } }
+            if loading { HStack { ProgressView(); Text("Yapımlar aranıyor…"); Spacer(); Button("İptal") { cancelSearch() } } }
             if let searchError { Text(searchError).foregroundStyle(.orange); Button("Yeniden dene") { search(reset: true) } }
             if results.isEmpty && !loading { EmptyState(title: submittedQuery.isEmpty ? "Bir hikâye ara" : "Sonuç bulunamadı", message: "Film, dizi, yönetmen, oyuncu veya tt ile başlayan IMDb kimliği yaz.", icon: "magnifyingglass") }
             LazyVStack(spacing: 12) { ForEach(results) { FilmRow(film: $0) } }
@@ -232,19 +236,20 @@ struct DiscoverView: View {
         }
     }
     private func search(reset: Bool) {
-        searchTask?.cancel(); let text = (reset ? query : submittedQuery).trimmingCharacters(in: .whitespacesAndNewlines)
+        cancelSearch(); let text = (reset ? query : submittedQuery).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         if reset { page = 1; results = []; submittedQuery = text }; searchError = nil
         guard !store.keys.tmdb.isEmpty else { results = store.catalog.filter { $0.title.localizedCaseInsensitiveContains(text) || $0.original.localizedCaseInsensitiveContains(text) }; return }
-        let nextPage = reset ? 1 : page + 1; let client = store.tmdb; loading = true
+        let nextPage = reset ? 1 : page + 1; let client = store.tmdb; loading = true; let requestID = searchID
         searchTask = Task { @MainActor in
-            defer { if !Task.isCancelled { loading = false } }
+            defer { if requestID == searchID { loading = false } }
             do {
-                let found = try await client.search(text, page: nextPage); try Task.checkCancellation()
+                let found = try await client.search(text, page: nextPage); try Task.checkCancellation(); guard requestID == searchID else { return }
                 var seen = Set(results.map(\.id)); results += found.filter { seen.insert($0.id).inserted }; page = nextPage
             } catch is CancellationError { } catch { if !Task.isCancelled { searchError = error.localizedDescription } }
         }
     }
+    private func cancelSearch() { searchTask?.cancel(); searchID = UUID(); loading = false }
     private var aiSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Sinemayı senin gözünden", systemImage: "sparkles").font(.title2.bold()).foregroundStyle(Cinema.gold)

@@ -38,8 +38,9 @@ final class ArchiveTests: XCTestCase {
     func testCSVHandlesQuotedCommasMultilineAndDuplicates() throws {
         let text = "\u{FEFF}Const,Title,Your Rating,Date Rated\r\ntt0133093,\"The, Matrix\",9,2024-02-03\r\ntt0133093,Duplicate,2,2020-01-01\r\ntt0111161,\"Multi\nline \"\"title\"\"\",10,2025-01-01\r\n"
         let rows = try IMDbCSV.parse(text)
-        XCTAssertEqual(rows.count, 2); XCTAssertEqual(rows[0].score, 9); XCTAssertNotNil(rows[0].watchedDate)
-        XCTAssertEqual(rows[1].imdb, "tt0111161"); XCTAssertEqual(rows[1].score, 10)
+        XCTAssertEqual(rows.count, 2); let first = try XCTUnwrap(rows.first); let second = try XCTUnwrap(rows.dropFirst().first)
+        XCTAssertEqual(first.score, 9); XCTAssertNotNil(first.watchedDate)
+        XCTAssertEqual(second.imdb, "tt0111161"); XCTAssertEqual(second.score, 10)
         XCTAssertThrowsError(try IMDbCSV.parse("Const,Title\ntt0133093,\"Broken"))
     }
     func testNewEpisodeUsesAirDateAndProgress() {
@@ -51,11 +52,11 @@ final class ArchiveTests: XCTestCase {
     @MainActor func testStorePersistsAndInvalidImportPreservesArchive() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }
-        let store = AppStore(directory: folder, testing: false)
+        let store = AppStore(directory: folder, testing: false, loadKeys: false)
         var entry = Entry(film: Film(number: 157336, title: "Interstellar")); entry.note = "Korunacak"; entry.favorite = true
         store.save(entry); XCTAssertNil(store.error)
         XCTAssertThrowsError(try store.restore(Data("{}".utf8), replace: true))
-        let reopened = AppStore(directory: folder, testing: false)
+        let reopened = AppStore(directory: folder, testing: false, loadKeys: false)
         XCTAssertEqual(reopened.entries.first?.note, "Korunacak")
         var other = Library(); let new = Entry(film: Film(number: 2, title: "Yeni")); other.entries[new.id] = new
         try reopened.restore(BackupCodec.encode(other), replace: false); XCTAssertEqual(reopened.entries.count, 2)
@@ -67,7 +68,7 @@ final class ArchiveTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: folder) }
         let file = folder.appendingPathComponent("library-v2.json"); let invalid = Data("damaged".utf8)
         try invalid.write(to: file)
-        let store = AppStore(directory: folder, testing: false); store.save(Entry(film: Film(number: 1, title: "A")))
+        let store = AppStore(directory: folder, testing: false, loadKeys: false); store.save(Entry(film: Film(number: 1, title: "A")))
         XCTAssertNotNil(store.error); XCTAssertEqual(try Data(contentsOf: file), invalid)
         try store.restore(BackupCodec.encode(Library()), replace: true)
         XCTAssertTrue(store.entries.isEmpty)

@@ -186,7 +186,8 @@ struct CSVRow { var imdb: String; var score: Int; var watchedDate: Date? }
 enum IMDbCSV {
     static func parse(_ text: String) throws -> [CSVRow] {
         var rows: [[String]] = []; var row: [String] = []; var field = ""; var quoted = false
-        let chars = Array(text.replacingOccurrences(of: "\u{FEFF}", with: "")); var i = 0
+        // Swift treats CRLF as one Character; normalize before walking grapheme clusters.
+        let chars = Array(text.replacingOccurrences(of: "\u{FEFF}", with: "").replacingOccurrences(of: "\r\n", with: "\n")); var i = 0
         while i < chars.count {
             let c = chars[i]
             if c == "\"" {

@@ -36,6 +36,7 @@ struct Film: Identifiable, Hashable {
     var providers: [String] = []
     var providerLink = ""
     var photos: [String] = []
+    var fetchedAt: Double = 0
     var id: String { "\(type)-\(number)" }
     var webID: String { type == "tv" ? "tv-\(number)" : String(number) }
     var label: String { type == "tv" ? "Dizi" : genreIDs.contains(99) ? "Belgesel" : "Film" }
@@ -66,6 +67,7 @@ struct Film: Identifiable, Hashable {
         collectionName = j.text("collectionName"); providerIDs = j["providerIds"] as? [Int] ?? []
         providers = j["providerNames"] as? [String] ?? []; providerLink = j.text("providerLink")
         photos = (j["photos"] as? [String] ?? []).map(Self.path).filter { !$0.isEmpty }
+        fetchedAt = j.double("fetchedAt")
     }
     static func tmdb(_ j: JSON, type: String? = nil, region: String = "TR") throws -> Film {
         let kind = type ?? j.text("media_type", j["name"] != nil ? "tv" : "movie")
@@ -94,6 +96,7 @@ struct Film: Identifiable, Hashable {
         f.nextEpisode = (j["next_episode_to_air"] as? JSON).map { Episode(season: $0.int("season_number"), episode: $0.int("episode_number"), date: $0.text("air_date"), name: $0.text("name")) }
         f.trailer = ((j["videos"] as? JSON)?["results"] as? [JSON] ?? []).first { $0.text("site") == "YouTube" && $0.text("type") == "Trailer" }?.text("key") ?? ""
         f.photos = ((j["images"] as? JSON)?["backdrops"] as? [JSON] ?? []).prefix(10).map { Self.path($0.text("file_path")) }
+        if j["credits"] != nil { f.fetchedAt = Date().timeIntervalSince1970 * 1000 }
         return f
     }
     var json: JSON {
@@ -103,7 +106,7 @@ struct Film: Identifiable, Hashable {
          "episodeRuntime": episodeRuntime, "seasonEpisodes": Dictionary(uniqueKeysWithValues: seasonEpisodes.map { (String($0.key), $0.value) }),
          "lastEpisode": lastEpisode?.json ?? NSNull(), "nextEpisode": nextEpisode?.json ?? NSNull(),
          "imdbId": imdbID, "trailer": trailer, "collectionId": collectionID, "collectionName": collectionName,
-         "providerIds": providerIDs, "providerNames": providers, "providerLink": providerLink, "photos": photos]
+         "providerIds": providerIDs, "providerNames": providers, "providerLink": providerLink, "photos": photos, "fetchedAt": fetchedAt]
     }
 }
 
@@ -216,7 +219,7 @@ enum BackupCodec {
         } }
         result.aiPicks = try picks("aiPicks"); result.recommendations = try picks("recommendations")
         for (key, value) in root["collections"] as? [String: JSON] ?? [:] {
-            guard let id = Int(key), id > 0 else { throw ArchiveError.invalid("Geçersiz seri kimliği.") }
+            guard let id = Int(key), id > 0, !result.collections.contains(where: { $0.id == id }) else { throw ArchiveError.invalid("Geçersiz veya yinelenen seri kimliği.") }
             let parts = try (value["parts"] as? [JSON] ?? []).map { j in try j["type"] != nil ? Film(j) : Film.tmdb(j, type: "movie") }
             result.collections.append(Collection(id: id, name: value.text("name"), parts: parts))
         }

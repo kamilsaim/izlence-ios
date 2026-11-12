@@ -14,7 +14,7 @@ import SwiftUI
     private let file: URL
     let isUITesting: Bool
 
-    init(directory: URL? = nil, testing: Bool = ProcessInfo.processInfo.arguments.contains("-ui-testing")) {
+    init(directory: URL? = nil, testing: Bool = ProcessInfo.processInfo.arguments.contains("-ui-testing"), loadKeys: Bool = true) {
         isUITesting = testing
         let root = directory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Izlence", isDirectory: true)
         file = root.appendingPathComponent("library-v2.json")
@@ -22,7 +22,7 @@ import SwiftUI
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
             if FileManager.default.fileExists(atPath: file.path) { library = try BackupCodec.decode(Data(contentsOf: file)) }
         } catch { storageFailure = true; self.error = "Arşiv okunamadı; mevcut dosya korundu. JSON yedeğiyle geri yükleyebilirsin." }
-        if !testing { do { keys = try KeychainStore.read() } catch { self.error = error.localizedDescription } }
+        if !testing && loadKeys { do { keys = try KeychainStore.read() } catch { self.error = error.localizedDescription } }
         if let url = Bundle.main.url(forResource: "catalog", withExtension: "json"),
            let data = try? Data(contentsOf: url), let rows = (try? JSONSerialization.jsonObject(with: data)) as? [JSON] {
             catalog = rows.compactMap { try? Film($0) }
@@ -179,7 +179,7 @@ import SwiftUI
     func refreshTV() async {
         guard !keys.tmdb.isEmpty, !busy else { return }
         let client = tmdb
-        for e in entries.filter({ $0.tracking && $0.film.type == "tv" }).prefix(30) {
+        for e in entries.filter({ $0.tracking && $0.film.type == "tv" && Date().timeIntervalSince1970 * 1000 - $0.film.fetchedAt > 12 * 60 * 60 * 1000 }).prefix(30) {
             if Task.isCancelled { return }
             if let film = try? await client.details(e.film), var current = library.entries[e.id] { current.film = film; save(current) }
         }

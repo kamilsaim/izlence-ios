@@ -145,8 +145,9 @@ struct EntryEditor: View {
                     Section("Bölüm ilerlemesi") {
                         Toggle("Takip ediyorum", isOn: $tracking)
                         if tracking {
-                            Stepper("Sezon \(season)", value: $season, in: 1...max(100, film.seasons))
-                            Stepper("Bölüm \(episode)", value: $episode, in: 0...max(1000, film.seasonEpisodes[season] ?? 0))
+                            Stepper("Sezon \(season)", value: $season, in: 1...(film.seasons > 0 ? max(season, film.seasons) : 100))
+                            Stepper("Bölüm \(episode)", value: $episode, in: 0...max(episode, film.seasonEpisodes[season] ?? 1000))
+                                .onChange(of: season) { _, value in if let count = film.seasonEpisodes[value] { episode = min(episode, count) } }
                             Button("İlerlemeyi sıfırla", role: .destructive) { season = 1; episode = 0 }
                         }
                     }
