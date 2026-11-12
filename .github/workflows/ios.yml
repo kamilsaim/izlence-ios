@@ -35,7 +35,7 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           set -o pipefail
-          xcodebuild test -project Izlence.xcodeproj -scheme Izlence -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/DerivedData -resultBundlePath build/Izlence.xcresult CODE_SIGNING_ALLOWED=NO MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" | tee build-test.log
+          xcodebuild test -project Izlence.xcodeproj -scheme Izlence -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/DerivedData -resultBundlePath build/Izlence.xcresult CODE_SIGN_IDENTITY=- MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" | tee build-test.log
       - name: Ekran görüntülerini çıkar
         if: always()
         run: |

@@ -112,7 +112,7 @@ struct DetailView: View {
     private func metadata(_ title: String, text: String) -> some View { VStack(alignment: .leading, spacing: 6) { Text(title).font(.caption).foregroundStyle(Cinema.muted); Text(text).font(.subheadline) } }
     private func safeURL(_ text: String) -> URL? { guard let url = URL(string: text), url.scheme == "https", let host = url.host, host == "themoviedb.org" || host.hasSuffix(".themoviedb.org") || host == "justwatch.com" || host.hasSuffix(".justwatch.com") else { return nil }; return url }
     private func load() async {
-        guard !store.keys.tmdb.isEmpty else { return }; loading = true; loadError = nil
+        guard !store.isUITesting else { return }; loading = true; loadError = nil
         defer { loading = false }
         do {
             let client = store.tmdb; let loaded = try await client.details(initial); try Task.checkCancellation(); film = loaded

@@ -98,7 +98,6 @@ import SwiftUI
     }
     func generateAI(_ ask: String) async throws {
         guard library.entries.count >= 3 else { throw ArchiveError.invalid("Zevkini tanımak için arşivine en az 3 yapım ekle.") }
-        guard !keys.tmdb.isEmpty else { throw ArchiveError.invalid("Önerileri doğrulamak için TMDB anahtarını da ekle.") }
         let source = library; let originalKeys = keys; let client = tmdb
         let (model, memory, raw) = try await GeminiClient(key: keys.google).generate(library: source, ask: ask) { [weak self] value in await MainActor.run { self?.progress = value } }
         var picks: [Pick] = []
@@ -177,7 +176,7 @@ import SwiftUI
         for e in pending { next.entries[e.id] = e }; try write(next); notice = "\(pending.count) kayıt aktarıldı; \(skipped) kayıt bulunamadı."
     }
     func refreshTV() async {
-        guard !keys.tmdb.isEmpty, !busy else { return }
+        guard !isUITesting, !busy else { return }
         let client = tmdb
         for e in entries.filter({ $0.tracking && $0.film.type == "tv" && Date().timeIntervalSince1970 * 1000 - $0.film.fetchedAt > 12 * 60 * 60 * 1000 }).prefix(30) {
             if Task.isCancelled { return }

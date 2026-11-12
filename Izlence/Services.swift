@@ -4,8 +4,7 @@ import Security
 struct APIKeys: Codable, Equatable { var tmdb = ""; var google = "" }
 
 enum KeychainStore {
-    private static let service = "com.kamilsaim.izlence.api-keys"
-    static func read() throws -> APIKeys {
+    static func read(service: String = "com.kamilsaim.izlence.api-keys") throws -> APIKeys {
         let query: JSON = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
             kSecAttrAccount as String: "personal", kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
         var result: CFTypeRef?
@@ -14,7 +13,7 @@ enum KeychainStore {
         guard status == errSecSuccess, let bytes = result as? Data else { throw ArchiveError.invalid("Anahtarlık okunamadı. Telefonun kilidini açıp tekrar dene.") }
         return try JSONDecoder().decode(APIKeys.self, from: bytes)
     }
-    static func save(_ keys: APIKeys) throws {
+    static func save(_ keys: APIKeys, service: String = "com.kamilsaim.izlence.api-keys") throws {
         let query: JSON = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: "personal"]
         let data = try JSONEncoder().encode(keys)
         var status = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
@@ -79,11 +78,13 @@ struct TMDBClient {
     var key: String
     var preferences: Preferences
     func request(_ path: String, _ query: [String: String] = [:]) async throws -> JSON {
-        guard !key.isEmpty else { throw ArchiveError.invalid("Canlı arama için Profil’den TMDB anahtarını ekle.") }
-        var components = URLComponents(string: "https://api.themoviedb.org/3" + path)!
-        var values = query; values["language"] = preferences.language; values["region"] = preferences.region
+        let base = key.isEmpty ? "https://izlence-tmdb.saimkamil.workers.dev/3" : "https://api.themoviedb.org/3"
+        var components = URLComponents(string: base + path)!
+        var values = query; if values["language"] == nil { values["language"] = preferences.language }; values["region"] = preferences.region
         var headers: [String: String] = [:]
-        if key.contains(".") { headers["Authorization"] = "Bearer " + key } else { values["api_key"] = key }
+        if key.isEmpty { headers["Origin"] = "https://izlence.web.app" }
+        else if key.contains(".") || key.count > 60 { headers["Authorization"] = "Bearer " + key }
+        else { values["api_key"] = key }
         components.queryItems = values.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
         return try await HTTPClient.shared.json(components.url!, headers: headers)
     }
@@ -95,30 +96,88 @@ struct TMDBClient {
         try await Film.tmdb(request("/\(f.type)/\(f.number)", ["append_to_response": "credits,videos,external_ids,watch/providers,images", "include_image_language": "tr,en,null"]), type: f.type, region: preferences.region)
     }
     func search(_ query: String, page: Int = 1) async throws -> [Film] {
+        try await searchPage(query, page: page).films
+    }
+    func searchPage(_ query: String, page: Int = 1, category: String = "all") async throws -> FilmPage {
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        func filtered(_ films: [Film], year: String? = nil) -> [Film] {
+            var seen = Set<String>()
+            return films.filter { f in
+                (category == "all" || category == f.type || category == "documentary" && f.genreIDs.contains(99)) && (year == nil || f.year == year) && seen.insert(f.id).inserted
+            }
+        }
+        if text.isEmpty {
+            let type = category == "tv" ? "tv" : "movie"
+            let path = category == "all" ? "/trending/all/week" : "/discover/\(type)"
+            var values = ["page": String(page), "sort_by": "popularity.desc", "include_adult": "false"]
+            if category == "documentary" { values["with_genres"] = "99" }
+            let j = try await request(path, values)
+            let films = (j["results"] as? [JSON] ?? []).compactMap { try? Film.tmdb($0, type: category == "all" ? nil : type) }
+            return FilmPage(films: filtered(films), hasMore: page < min(500, j.int("total_pages")))
+        }
         if text.range(of: #"^tt[0-9]{5,12}$"#, options: .regularExpression) != nil {
             let j = try await request("/find/\(text)", ["external_source": "imdb_id"])
-            return (j["movie_results"] as? [JSON] ?? []).compactMap { try? Film.tmdb($0, type: "movie") } + (j["tv_results"] as? [JSON] ?? []).compactMap { try? Film.tmdb($0, type: "tv") }
+            let movies = (j["movie_results"] as? [JSON] ?? []).compactMap { try? Film.tmdb($0, type: "movie") }
+            let shows = (j["tv_results"] as? [JSON] ?? []).compactMap { try? Film.tmdb($0, type: "tv") }
+            return FilmPage(films: filtered(movies + shows), hasMore: false)
         }
-        let j = try await request("/search/multi", ["query": text, "page": String(page), "include_adult": "false"])
+        let regex = try NSRegularExpression(pattern: #"^(.*?)\s+\(?((?:18|19|20)[0-9]{2})\)?$"#)
+        let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text))
+        let title = match.flatMap { Range($0.range(at: 1), in: text) }.map { String(text[$0]) } ?? text
+        let year = match.flatMap { Range($0.range(at: 2), in: text) }.map { String(text[$0]) }
+        let j = try await request("/search/multi", ["query": title, "page": String(page), "include_adult": "false"])
         let rows = j["results"] as? [JSON] ?? []
-        var films = rows.filter { ["movie", "tv"].contains($0.text("media_type")) }.compactMap { try? Film.tmdb($0) }
-        if page == 1, let person = rows.first(where: { $0.text("media_type") == "person" && $0.text("name").localizedCaseInsensitiveCompare(text) == .orderedSame }) {
-            let credits = try await request("/person/\(person.int("id"))/combined_credits")
-            let all = (credits["cast"] as? [JSON] ?? []) + (credits["crew"] as? [JSON] ?? [])
-            films += all.filter { $0.text("character").range(of: #"(?i)self|himself|herself"#, options: .regularExpression) == nil && $0.int("vote_count") > 20 }.compactMap { try? Film.tmdb($0) }
+        let films = rows.filter { ["movie", "tv"].contains($0.text("media_type")) }.compactMap { try? Film.tmdb($0) }
+        func same(_ a: String, _ b: String) -> Bool {
+            func norm(_ s: String) -> String { s.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX")).replacingOccurrences(of: "ı", with: "i").filter { $0.isLetter || $0.isNumber } }
+            return norm(a) == norm(b)
         }
-        var seen = Set<String>(); return films.filter { seen.insert($0.id).inserted }
+        if page == 1 && !films.contains(where: { same($0.title, title) || same($0.original, title) }) {
+            let people = (try await optional("/search/person", ["query": title, "language": "en-US"]))["results"] as? [JSON] ?? []
+            if let person = people.first(where: { same($0.text("name"), title) || !title.contains(" ") && same(String($0.text("name").split(separator: " ").last ?? ""), title) && $0.double("popularity") >= 2 }) {
+                let credits = try await request("/person/\(person.int("id"))/combined_credits")
+                let all = (credits["cast"] as? [JSON] ?? []) + (credits["crew"] as? [JSON] ?? [])
+                let selected = all.filter { j in
+                    !["self", "himself", "herself"].contains(j.text("character").lowercased()) && Set(j["genre_ids"] as? [Int] ?? []).isDisjoint(with: [10763, 10764, 10767])
+                }.sorted { $0.double("popularity") > $1.double("popularity") }.compactMap { try? Film.tmdb($0) }
+                return FilmPage(films: filtered(selected, year: year), hasMore: false)
+            }
+            if category != "tv" {
+                let collections = (try await optional("/search/collection", ["query": title]))["results"] as? [JSON] ?? []
+                if let c = collections.first(where: { same($0.text("name").replacingOccurrences(of: #"(?i)\s*(collection|koleksiyonu|serisi)\s*$"#, with: "", options: .regularExpression), title) }) {
+                    return FilmPage(films: filtered(try await collection(c.int("id")).parts, year: year), hasMore: false)
+                }
+            }
+            if films.isEmpty {
+                let keywords = (try await optional("/search/keyword", ["query": title]))["results"] as? [JSON] ?? []
+                if let keyword = keywords.first(where: { same($0.text("name"), title) }) {
+                    let type = category == "tv" ? "tv" : "movie"
+                    let found = try await results("/discover/\(type)", ["with_keywords": String(keyword.int("id")), "sort_by": "popularity.desc"], type: type)
+                    return FilmPage(films: filtered(found, year: year), hasMore: false)
+                }
+            }
+        }
+        return FilmPage(films: filtered(films, year: year), hasMore: page < min(500, j.int("total_pages")))
+    }
+    private func optional(_ path: String, _ query: [String: String]) async throws -> JSON {
+        do { return try await request(path, query) }
+        catch is CancellationError { throw CancellationError() }
+        catch NetworkError.invalidKey { throw NetworkError.invalidKey }
+        catch { return [:] }
     }
     func collection(_ id: Int) async throws -> Collection {
         let j = try await request("/collection/\(id)")
         return Collection(id: id, name: j.text("name"), parts: (j["parts"] as? [JSON] ?? []).compactMap { try? Film.tmdb($0, type: "movie") }.sorted { $0.year < $1.year })
     }
     func providers() async throws -> [(Int, String)] {
-        let j = try await request("/watch/providers/movie", ["watch_region": preferences.region])
-        return (j["results"] as? [JSON] ?? []).map { ($0.int("provider_id"), $0.text("provider_name")) }
+        let movies = try await request("/watch/providers/movie", ["watch_region": preferences.region])
+        let shows = try await optional("/watch/providers/tv", ["watch_region": preferences.region])
+        var seen = Set<Int>()
+        return ((movies["results"] as? [JSON] ?? []) + (shows["results"] as? [JSON] ?? [])).filter { seen.insert($0.int("provider_id")).inserted }.map { ($0.int("provider_id"), $0.text("provider_name")) }
     }
 }
+
+struct FilmPage { var films: [Film]; var hasMore: Bool }
 
 struct GeminiClient {
     var key: String

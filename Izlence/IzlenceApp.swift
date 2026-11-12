@@ -204,6 +204,8 @@ struct DiscoverView: View {
     @State private var consent = false
     @State private var searchTask: Task<Void, Never>?
     @State private var searchID = UUID()
+    @State private var category = "all"
+    @State private var hasMore = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -217,35 +219,40 @@ struct DiscoverView: View {
                 } else { aiSection }
             }.padding(20).frame(maxWidth: 800).frame(maxWidth: .infinity)
         }.navigationTitle("Keşfet").onDisappear { cancelSearch() }
+            .task { if !store.isUITesting && results.isEmpty { search(reset: true) } }
             .confirmationDialog("Gemini’ye öneri isteği gönderilsin mi?", isPresented: $consent, titleVisibility: .visible) {
                 Button("Gönder ve öneri hazırla") { store.perform { try await store.generateAI(ask) } }
             } message: { Text("Yapım adları, puanlar, favoriler, türler, zevk özeti ve buradaki isteğin Google’a gönderilir. Kişisel notların gönderilmez. Kendi Google AI kotan kullanılır.") }
     }
     private var searchSection: some View {
         VStack(alignment: .leading, spacing: 16) {
+            Picker("Yapım türü", selection: $category) {
+                Text("Tümü").tag("all"); Text("Film").tag("movie"); Text("Dizi").tag("tv"); Text("Belgesel").tag("documentary")
+            }.pickerStyle(.segmented).onChange(of: category) { _, _ in search(reset: true) }
             HStack {
                 TextField("Yapım, kişi veya IMDb kimliği", text: $query).textFieldStyle(.roundedBorder).submitLabel(.search).onSubmit { search(reset: true) }.accessibilityIdentifier("search-field")
                 Button { search(reset: true) } label: { Image(systemName: "magnifyingglass").frame(width: 44, height: 44) }.accessibilityLabel("Ara")
             }
-            if store.keys.tmdb.isEmpty { Text("Şimdilik örnek katalogda arıyorsun. Tüm yapımlar için Profil’den TMDB anahtarını ekle.").font(.footnote).foregroundStyle(Cinema.muted) }
+            if store.keys.tmdb.isEmpty { Text("Ortak TMDB bağlantısı kullanılıyor. Profil’den kendi anahtarını da ekleyebilirsin.").font(.footnote).foregroundStyle(Cinema.muted) }
             if loading { HStack { ProgressView(); Text("Yapımlar aranıyor…"); Spacer(); Button("İptal") { cancelSearch() } } }
             if let searchError { Text(searchError).foregroundStyle(.orange); Button("Yeniden dene") { search(reset: true) } }
             if results.isEmpty && !loading { EmptyState(title: submittedQuery.isEmpty ? "Bir hikâye ara" : "Sonuç bulunamadı", message: "Film, dizi, yönetmen, oyuncu veya tt ile başlayan IMDb kimliği yaz.", icon: "magnifyingglass") }
             LazyVStack(spacing: 12) { ForEach(results) { FilmRow(film: $0) } }
-            if !results.isEmpty && !store.keys.tmdb.isEmpty { Button("Daha fazla sonuç") { search(reset: false) }.disabled(loading).frame(minHeight: 44) }
+            if hasMore { Button("Daha fazla sonuç") { search(reset: false) }.disabled(loading).frame(minHeight: 44) }
         }
     }
     private func search(reset: Bool) {
         cancelSearch(); let text = (reset ? query : submittedQuery).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
         if reset { page = 1; results = []; submittedQuery = text }; searchError = nil
-        guard !store.keys.tmdb.isEmpty else { results = store.catalog.filter { $0.title.localizedCaseInsensitiveContains(text) || $0.original.localizedCaseInsensitiveContains(text) }; return }
-        let nextPage = reset ? 1 : page + 1; let client = store.tmdb; loading = true; let requestID = searchID
+        if store.isUITesting {
+            results = store.catalog.filter { (text.isEmpty || $0.title.localizedCaseInsensitiveContains(text) || $0.original.localizedCaseInsensitiveContains(text)) && (category == "all" || $0.type == category || category == "documentary" && $0.genreIDs.contains(99)) }; hasMore = false; return
+        }
+        let nextPage = reset ? 1 : page + 1; let client = store.tmdb; loading = true; let requestID = searchID; let kind = category
         searchTask = Task { @MainActor in
             defer { if requestID == searchID { loading = false } }
             do {
-                let found = try await client.search(text, page: nextPage); try Task.checkCancellation(); guard requestID == searchID else { return }
-                var seen = Set(results.map(\.id)); results += found.filter { seen.insert($0.id).inserted }; page = nextPage
+                let found = try await client.searchPage(text, page: nextPage, category: kind); try Task.checkCancellation(); guard requestID == searchID else { return }
+                var seen = Set(results.map(\.id)); results += found.films.filter { seen.insert($0.id).inserted }; page = nextPage; hasMore = found.hasMore
             } catch is CancellationError { } catch { if !Task.isCancelled { searchError = error.localizedDescription } }
         }
     }

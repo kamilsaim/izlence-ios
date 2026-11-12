@@ -1,7 +1,29 @@
 import XCTest
+import Security
 @testable import Izlence
 
 final class ArchiveTests: XCTestCase {
+    func testKeychainRoundTripAndUpdate() throws {
+        let service = "com.kamilsaim.izlence.tests." + UUID().uuidString
+        defer { SecItemDelete([kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service] as CFDictionary) }
+        XCTAssertEqual(try KeychainStore.read(service: service), APIKeys())
+        let sample = APIKeys(tmdb: "test-only-tmdb", google: "test-only-google")
+        try KeychainStore.save(sample, service: service)
+        XCTAssertEqual(try KeychainStore.read(service: service), sample)
+        try KeychainStore.save(APIKeys(), service: service)
+        XCTAssertEqual(try KeychainStore.read(service: service), APIKeys())
+    }
+    func testSharedTMDBFindDetailsPersonAndCollection() async throws {
+        let client = TMDBClient(key: "", preferences: Preferences())
+        let found = try await client.search("tt0816692")
+        let film = try XCTUnwrap(found.first); XCTAssertEqual(film.number, 157336)
+        let details = try await client.details(film); XCTAssertEqual(details.imdbID, "tt0816692"); XCTAssertGreaterThan(details.runtime, 0)
+        let people = try await client.search("Tom Hardy"); XCTAssertTrue(people.contains { $0.number == 76341 })
+        let series = try await client.collection(726871); XCTAssertTrue(series.parts.contains { $0.number == 693134 })
+        let trending = try await client.searchPage("", page: 1); XCTAssertFalse(trending.films.isEmpty); XCTAssertTrue(trending.hasMore)
+        let next = try await client.searchPage("", page: 2); XCTAssertFalse(next.films.isEmpty)
+        XCTAssertNotEqual(trending.films.map(\.id), next.films.map(\.id))
+    }
     private func bytes(_ root: JSON) throws -> Data { try JSONSerialization.data(withJSONObject: root) }
     func testAndroidRoundTripKeepsSameNumberMovieAndTVSeparate() throws {
         var movie = Entry(film: Film(number: 550, title: "Film")); movie.note = String(repeating: "Uzun not 🎬\n", count: 4000); movie.score = 9; movie.favorite = true

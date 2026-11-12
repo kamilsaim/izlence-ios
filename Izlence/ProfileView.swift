@@ -103,7 +103,7 @@ struct APISettingsView: View {
                 Section {
                     SecureField("TMDB API anahtarı / okuma jetonu", text: $tmdb).textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityLabel("TMDB anahtarı")
                     Link("TMDB anahtarı oluştur", destination: URL(string: "https://www.themoviedb.org/settings/api")!)
-                } header: { Text("Film bilgileri · TMDB") } footer: { Text("Arama, ayrıntılar, yayın platformları ve kişisel öneriler için kullanılır.") }
+                } header: { Text("Film bilgileri · TMDB") } footer: { Text("İsteğe bağlıdır. Boş bırakırsan Android/web ile aynı ortak bağlantı kullanılır. Kendi anahtarını girersen istekler doğrudan TMDB’ye gider.") }
                 Section {
                     SecureField("Google AI API anahtarı", text: $google).textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityLabel("Google AI anahtarı")
                     Link("Google AI Studio’yu aç", destination: URL(string: "https://aistudio.google.com/api-keys")!)

@@ -17,7 +17,7 @@ GitHub → Actions → **iOS test ve TestFlight** elle çalıştırılır. Önce
 ## Özellikler
 
 - Ana Sayfa: çevrimdışı paketli afişler, öne çıkanlar, listelerin sayıları, takip edilen diziler.
-- Keşfet: yapım/kişi/IMDb araması ve sayfalama; klasik kişisel öneriler; kendi Google anahtarınla, açık veri aktarım onayıyla Gemini önerileri. Modeller API'den listelenir; otomatik seçim başarısız modellerde diğerlerini dener. Sonuçlar TMDB'de başlık/yıl/tür ile doğrulanır.
+- Keşfet: trendler, yapım/kişi/IMDb/yıl/seri/anahtar kelime araması, tür filtresi ve sayfalama; klasik kişisel öneriler; kendi Google anahtarınla, açık veri aktarım onayıyla Gemini önerileri. Modeller API'den listelenir; otomatik seçim başarısız modellerde diğerlerini dener. Sonuçlar TMDB'de başlık/yıl/tür ile doğrulanır. Kendi TMDB anahtarın isteğe bağlıdır; yoksa Android/web ile aynı ortak bağlantı kullanılır.
 - Arşivim: tür, arama ve sıralama. Yapım ayrıntılarında izledim/izleyeceğim/favori, puan, not, dizi ilerlemesi, yayın platformları, benzerler, fragman, IMDb ve sahne görselleri.
 - Listeler: izlenecekler, izlenenler, favoriler, dizi takibi ve arşivden seri taraması.
 - Profil: iki kişisel API anahtarı, model/dil/ülke/platform tercihleri, istatistikler, JSON yedek/geri yükleme, IMDb CSV aktarımı, arşiv ve anahtar silme.
