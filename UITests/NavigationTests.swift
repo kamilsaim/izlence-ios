@@ -19,6 +19,27 @@ final class NavigationTests: XCTestCase {
         app.tabBars.buttons["Profil"].tap()
         XCTAssertTrue(app.buttons["Gizlediğim önerileri sıfırla (1)"].exists)
     }
+    @MainActor func testHomeCategoryShortcutsAndArchiveControls() throws {
+        let app = XCUIApplication(); app.launchArguments = ["-ui-testing"]
+        for (key, label) in [("movie", "Film"), ("tv", "Dizi"), ("documentary", "Belgesel"), ("all", "Tümü")] {
+            app.launch()
+            XCTAssertTrue(app.staticTexts["Bu akşam ne izlesek?"].waitForExistence(timeout: 15))
+            let shortcut = app.buttons["home-category-\(key)"]
+            for _ in 0..<4 { if shortcut.exists && shortcut.isHittable { break }; app.swipeUp() }
+            XCTAssertTrue(shortcut.isHittable); shortcut.tap()
+            XCTAssertTrue(app.textFields["search-field"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.segmentedControls.buttons[label].isSelected)
+            app.terminate()
+        }
+        app.launch(); app.tabBars.buttons["Arşivim"].tap()
+        for key in ["all", "movie", "tv", "documentary"] {
+            let category = app.buttons["archive-category-\(key)"]
+            XCTAssertTrue(category.waitForExistence(timeout: 5)); category.tap(); XCTAssertTrue(category.isSelected)
+        }
+        app.buttons["archive-layout"].tap(); app.buttons["archive-layout"].tap()
+        app.buttons["Arşive yapım ekle"].tap()
+        XCTAssertTrue(app.textFields["search-field"].waitForExistence(timeout: 5))
+    }
     @MainActor func testOfflineNavigationArchiveAndScreenshots() throws {
         let app = XCUIApplication(); app.launchArguments = ["-ui-testing"]; app.launch()
         XCTAssertTrue(app.staticTexts["Bu akşam ne izlesek?"].waitForExistence(timeout: 15))

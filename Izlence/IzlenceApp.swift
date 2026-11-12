@@ -40,6 +40,7 @@ struct RootView: View {
         NavigationStack {
             content().background(Cinema.background)
                 .navigationDestination(for: Film.self) { DetailView(initial: $0) }
+                .navigationDestination(for: ContentCategory.self) { DiscoverView(initialCategory: $0.rawValue) }
                 .toolbarBackground(Cinema.background, for: .navigationBar)
         }
         // The system TabView supplies Liquid Glass on iOS 26+ and native material on iOS 17–18.
@@ -131,6 +132,33 @@ struct FilmShelf: View {
     }
 }
 
+enum ContentCategory: String, CaseIterable, Identifiable {
+    case all, movie, tv, documentary
+    var id: String { rawValue }
+    var title: String { switch self { case .all: "Araştır"; case .movie: "Filmler"; case .tv: "Diziler"; case .documentary: "Belgeseller" } }
+    var icon: String { switch self { case .all: "magnifyingglass"; case .movie: "film"; case .tv: "tv"; case .documentary: "leaf" } }
+    var color: Color { switch self { case .all: .purple; case .movie: .cyan; case .tv: .pink; case .documentary: .green } }
+    func matches(_ film: Film) -> Bool { self == .all || film.type == rawValue || self == .documentary && film.genreIDs.contains(99) }
+}
+
+struct CategoryTile: View {
+    let title: String
+    let icon: String
+    let color: Color
+    var count: Int? = nil
+    var selected = false
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon).font(.title2).accessibilityHidden(true)
+            Text(title).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            if let count { Text(count.formatted()).font(.subheadline.bold()) }
+        }.foregroundStyle(selected ? Cinema.gold : color).frame(maxWidth: .infinity, minHeight: 80)
+            .padding(.vertical, 8).background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 16))
+            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(selected ? Cinema.gold : color.opacity(0.25)) }
+            .accessibilityElement(children: .combine)
+    }
+}
+
 struct HomeView: View {
     @EnvironmentObject private var store: AppStore
     @State private var hero = ""
@@ -171,6 +199,12 @@ struct HomeView: View {
                 } else {
                     EmptyState(title: "Yeni bir hikâye arayalım", message: "Keşfet sekmesinden yeni yapımlar bulabilirsin. İzlediklerin ve gizlediğin öneriler burada gösterilmez.", icon: "sparkles")
                 }
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 74), spacing: 10)], spacing: 10) {
+                    ForEach([ContentCategory.movie, .tv, .documentary, .all]) { category in
+                        NavigationLink(value: category) { CategoryTile(title: category.title, icon: category.icon, color: category.color) }
+                            .buttonStyle(.plain).accessibilityIdentifier("home-category-\(category.rawValue)")
+                    }
+                }.padding(.horizontal, 20)
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 12) { counts }
                     VStack(spacing: 12) { counts }
@@ -201,6 +235,7 @@ struct HomeView: View {
 struct FilmRow: View {
     var film: Film
     var subtitle = ""
+    var entry: Entry? = nil
     var body: some View {
         NavigationLink(value: film) {
             HStack(spacing: 16) {
@@ -208,6 +243,14 @@ struct FilmRow: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(film.title).font(.headline).foregroundStyle(.white)
                     Text("\(film.year) · \(film.label) · ★ \(film.rating.formatted(.number.precision(.fractionLength(1))))").font(.caption).foregroundStyle(Cinema.muted)
+                    if let entry {
+                        HStack(spacing: 12) {
+                            if entry.watched { Image(systemName: "checkmark.circle.fill").accessibilityLabel("İzlendi") }
+                            if entry.favorite { Image(systemName: "heart.fill").accessibilityLabel("Favori") }
+                            if entry.watchlist { Image(systemName: "bookmark.fill").accessibilityLabel("İzlenecek") }
+                            if !entry.note.isEmpty { Image(systemName: "note.text").accessibilityLabel("Not var") }
+                        }.foregroundStyle(Cinema.gold)
+                    }
                     if !subtitle.isEmpty { Text(subtitle).font(.subheadline).foregroundStyle(Cinema.muted) }
                 }
                 Spacer(minLength: 0)
@@ -237,7 +280,8 @@ struct DiscoverView: View {
     @State private var consent = false
     @State private var searchTask: Task<Void, Never>?
     @State private var searchID = UUID()
-    @State private var category = "all"
+    @State private var category: String
+    init(initialCategory: String = "all") { _category = State(initialValue: initialCategory) }
     @State private var hasMore = false
     var body: some View {
         ScrollView {
@@ -252,7 +296,7 @@ struct DiscoverView: View {
                 } else { aiSection }
             }.padding(20).frame(maxWidth: 800).frame(maxWidth: .infinity)
         }.navigationTitle("Keşfet").onDisappear { cancelSearch() }
-            .task { if !store.isUITesting && results.isEmpty { search(reset: true) } }
+            .task { if results.isEmpty && (!store.isUITesting || category != "all") { search(reset: true) } }
             .confirmationDialog("Gemini’ye öneri isteği gönderilsin mi?", isPresented: $consent, titleVisibility: .visible) {
                 Button("Gönder ve öneri hazırla") { store.perform { try await store.generateAI(ask) } }
             } message: { Text("Yapım adları, puanlar, favoriler, türler, zevk özeti ve buradaki isteğin Google’a gönderilir. Kişisel notların gönderilmez. Kendi Google AI kotan kullanılır.") }
@@ -315,25 +359,48 @@ struct DiscoverView: View {
 
 struct ArchiveView: View {
     @EnvironmentObject private var store: AppStore
-    @State private var filter = "Tümü"
+    @State private var filter = ContentCategory.all
+    @State private var gridLayout = false
     @State private var query = ""
     @State private var sort = "Son eklenen"
     private var filtered: [Entry] {
         let list = store.entries.filter { e in
             (query.isEmpty || e.film.title.localizedCaseInsensitiveContains(query)) &&
-            (filter == "Tümü" || filter == "Filmler" && e.film.type == "movie" || filter == "Diziler" && e.film.type == "tv" || filter == "Belgeseller" && e.film.genreIDs.contains(99))
+            filter.matches(e.film)
         }
         return sort == "Puana göre" ? list.sorted { $0.score > $1.score } : sort == "Ada göre" ? list.sorted { $0.film.title.localizedStandardCompare($1.film.title) == .orderedAscending } : list.sorted { $0.addedAt > $1.addedAt }
     }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Picker("Yapım türü", selection: $filter) { ForEach(["Tümü", "Filmler", "Diziler", "Belgeseller"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 74), spacing: 10)], spacing: 10) {
+                    ForEach(ContentCategory.allCases) { category in
+                        Button { filter = category } label: {
+                            CategoryTile(title: category == .all ? "Tümü" : category.title,
+                                         icon: category == .all ? "folder" : category.icon, color: category.color,
+                                         count: store.entries.filter { category.matches($0.film) }.count, selected: filter == category)
+                        }.buttonStyle(.plain).accessibilityIdentifier("archive-category-\(category.rawValue)")
+                            .accessibilityAddTraits(filter == category ? .isSelected : [])
+                    }
+                }
                 HStack { Text("\(filtered.count) yapım").foregroundStyle(Cinema.muted); Spacer(); Picker("Sıralama", selection: $sort) { ForEach(["Son eklenen", "Ada göre", "Puana göre"], id: \.self) { Text($0) } } }
                 if filtered.isEmpty { EmptyState(title: "Arşivin seni bekliyor", message: "Keşfet’ten yapım ekle veya Profil’den Android/web yedeğini aktar.", icon: "square.stack") }
-                LazyVStack(spacing: 12) { ForEach(filtered) { e in FilmRow(film: e.film, subtitle: status(e)) } }
+                if gridLayout {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), alignment: .top)], alignment: .leading, spacing: 20) {
+                        ForEach(filtered) { e in FilmCard(film: e.film, showRecommendationActions: false) }
+                    }
+                } else {
+                    LazyVStack(spacing: 12) { ForEach(filtered) { e in FilmRow(film: e.film, subtitle: status(e), entry: e) } }
+                }
             }.padding(20).frame(maxWidth: 800).frame(maxWidth: .infinity)
         }.navigationTitle("Arşivim").searchable(text: $query, prompt: "Arşivinde ara")
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button { gridLayout.toggle() } label: { Image(systemName: gridLayout ? "list.bullet" : "square.grid.2x2") }
+                        .accessibilityLabel("Görünümü değiştir").accessibilityIdentifier("archive-layout")
+                    NavigationLink(value: ContentCategory.all) { Image(systemName: "plus") }.accessibilityLabel("Arşive yapım ekle")
+                }
+            }
     }
     private func status(_ e: Entry) -> String {
         var parts: [String] = []; if e.watched { parts.append("İzlendi") }; if e.favorite { parts.append("Favori") }; if e.watchlist { parts.append("İzlenecek") }; if e.score > 0 { parts.append("Puanın \(e.score)/10") }; return parts.joined(separator: " · ")
