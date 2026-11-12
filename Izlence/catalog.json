@@ -1,0 +1,206 @@
+[
+  {
+    "id": 693134,
+    "type": "movie",
+    "title": "Dune: Çöl Gezegeni - Bölüm İki",
+    "original": "Dune: Part Two",
+    "year": "2024",
+    "rating": 8.1,
+    "overview": "Paul, Harkonnen ailesinin saldırısından kurtulduktan sonra Fremenler ile birlikte yaşamaya başlar. Fremenler'in yardımı ile, Arrakis'in kontrolüne yeniden sahip olmak ve evrenin kaderini değiştirmek için mücadele eder. Fremenler, Paul'un liderliğinde Arrakis gezegenini özgürleştireceklerine ve galakside eşitlik ile adaleti sağlayacaklarına inanırlar.",
+    "poster": "/tihf8Trht9zP3scmUQfvGlAY9FU.jpg",
+    "backdrop": "/eZ239CUp1d6OryZEBPnO2n87gMG.jpg",
+    "genres": [
+      "Bilim-Kurgu",
+      "Macera"
+    ],
+    "director": "Deni Vilenüv",
+    "cast": "Timothee Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem",
+    "runtime": 165,
+    "seasons": 0,
+    "trailer": "j0e5Wnxs5BI"
+  },
+  {
+    "id": 157336,
+    "type": "movie",
+    "title": "Yıldızlararası",
+    "original": "Interstellar",
+    "year": "2014",
+    "rating": 8.493,
+    "overview": "Dünya'nın kuraklık ve kıtlıkla yok oluşun eşiğine geldiği bir gelecekte, insanlığın hayatta kalabilmesi için yeni bir yuva bulması şarttır. Keşfedilen gizemli bir solucan deliği, bir grup astronot ve bilim insanına insanlık tarihinin en önemli görevini üstlenme fırsatı verir. Eski bir NASA pilotu olan Cooper, ailesini geride bırakarak yıldızlararası bir yolculuğa çıkar ve bilinmeyen galaksilerde insanlığın kurtuluşunu arar.",
+    "poster": "/xbiycuc84TrieEWwkkuH2hoEa9S.jpg",
+    "backdrop": "/8sNiAPPYU14PUepFNeSNGUTiHW.jpg",
+    "genres": [
+      "Macera",
+      "Dram",
+      "Bilim-Kurgu"
+    ],
+    "director": "Christopher Nolan",
+    "cast": "Matthew McConaughey, Anne Hathaway, Michael Caine, Jessica Chastain",
+    "runtime": 169,
+    "seasons": 0,
+    "trailer": "vVJeYMRam0o"
+  },
+  {
+    "id": 872585,
+    "type": "movie",
+    "title": "Oppenheimer",
+    "original": "Oppenheimer",
+    "year": "2023",
+    "rating": 8.023,
+    "overview": "İkinci Dünya Savaşı sırasında atom bombasının geliştirilmesine liderlik eden Amerikalı fizikçi J. Robert Oppenheimer'ın hikayesi. Manhattan Projesi'nin başına geçen Oppenheimer, insanlık tarihini değiştirecek bu ölümcül icadı hayata geçirirken, yarattığı gücün doğuracağı vicdani ve siyasi sonuçlarla da yüzleşmek zorunda kalır.",
+    "poster": "/mmZi0tyPFfbcCqEsJIPxVldCPOL.jpg",
+    "backdrop": "/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg",
+    "genres": [
+      "Dram",
+      "Tarih",
+      "Savaş"
+    ],
+    "director": "Christopher Nolan",
+    "cast": "Cillian Murphy, Emily Blunt, Matt Damon, Robert Downey Jr.",
+    "runtime": 181,
+    "seasons": 0,
+    "trailer": "HYkXAHr45Yk"
+  },
+  {
+    "id": 100088,
+    "type": "tv",
+    "title": "The Last of Us",
+    "original": "The Last of Us",
+    "year": "2023",
+    "rating": 8.4,
+    "overview": "Dünyayı kasıp kavuran bir salgınından yirmi yıl sonra hayatta kalan Joel ve Ellie, her şeyi değiştirebilecek bir görev için yola koyulur.",
+    "poster": "/cdbDsn2hqLL7x804GixzPP8AiBE.jpg",
+    "backdrop": "/lY2DhbA7Hy44fAKddr06UrXWWaQ.jpg",
+    "genres": [
+      "Dram"
+    ],
+    "director": "Neil Druckmann, Craig Mazin",
+    "cast": "Bella Ramsey, Gabriel Luna, Isabela Merced, Young Mazino",
+    "runtime": 0,
+    "seasons": 2,
+    "trailer": "HntYTZyHrV0"
+  },
+  {
+    "id": 87108,
+    "type": "tv",
+    "title": "Chernobyl",
+    "original": "Chernobyl",
+    "year": "2019",
+    "rating": 8.731,
+    "overview": "1986 senesinde Sovyet nükleer santralinde meydana gelen patlama sonrası santral işçileri ve itfaiyeciler faciayı kontrol altına almaya çalışır.",
+    "poster": "/vDwYRtmfBgM9zq4o0xbeUuVo3DL.jpg",
+    "backdrop": "/900tHlUYUkp7Ol04XFSoAaEIXcT.jpg",
+    "genres": [
+      "Dram"
+    ],
+    "director": "Craig Mazin",
+    "cast": "Jared Harris, Stellan Skarsgård, Emily Watson, Paul Ritter",
+    "runtime": 0,
+    "seasons": 1,
+    "trailer": ""
+  },
+  {
+    "id": 438631,
+    "type": "movie",
+    "title": "Dune: Çöl Gezegeni",
+    "original": "Dune",
+    "year": "2021",
+    "rating": 7.786,
+    "overview": "Paul Atreides, kavrayışının ötesinde büyük bir kaderle dünyaya gelmiş zeki ve yetenekli bir gençtir. Paul, ailesinin ve halkının geleceğini güvence altına almak için evrendeki en tehlikeli gezegene gitmek zorunda kalır. İnsanlığın en büyük potansiyelini açığa çıkarma gücüne sahip, var olan en değerli maddenin tek kaynağı olan gezegenin üzerinde kötü niyetli güçler çatışmaya tutuşurken, yalnızca korkularını yenebilenler hayatta kalabilecektir.",
+    "poster": "/roeYIqWHyVHcjWDk6SOaepNEk0y.jpg",
+    "backdrop": "/qVgZu5BTx6pu4owCvVOm4zjTfOi.jpg",
+    "genres": [
+      "Bilim-Kurgu",
+      "Macera"
+    ],
+    "director": "Deni Vilenüv",
+    "cast": "Timothee Chalamet, Rebecca Ferguson, Oscar Isaac, Jason Momoa",
+    "runtime": 155,
+    "seasons": 0,
+    "trailer": "nXEXDl0Hau0"
+  },
+  {
+    "id": 27205,
+    "type": "movie",
+    "title": "Başlangıç",
+    "original": "Inception",
+    "year": "2010",
+    "rating": 8.373,
+    "overview": "Hedeflerinin bilinçaltına sızarak kurumsal casusluk yapan yetenekli bir hırsız olan Cobb'a, imkansız olduğu düşünülen bir görev karşılığında eski hayatını geri kazanma şansı sunulur: Başka birinin fikrini hedefin bilinçaltına yerleştirme işlemi olan \"başlangıç.\"",
+    "poster": "/xn0Kcg4e6p0mLxVS3nAWhNmW2Ni.jpg",
+    "backdrop": "/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg",
+    "genres": [
+      "Aksiyon",
+      "Bilim-Kurgu",
+      "Suç"
+    ],
+    "director": "Christopher Nolan",
+    "cast": "Leonardo DiCaprio, Joseph Gordon-Levitt, Ken Vatanabe, Tom Hardy",
+    "runtime": 148,
+    "seasons": 0,
+    "trailer": ""
+  },
+  {
+    "id": 10515,
+    "type": "movie",
+    "title": "Gökteki Kale",
+    "original": "天空の城ラピュタ",
+    "year": "1986",
+    "rating": 7.972,
+    "overview": "Özel olarak görevlendirilmiş bir devlet kuruluşu tarafından hava gemisinde esir tutulan kız Sheeta, geminin korsanlar tarafından saldırıya uğradığı anda bir fırsatını bulup kaçmaya kalkar ama gemiden aşağıya düşer. Bulutlar arasında hızla düşerken, bilincini kaybeden Sheeta'nın boynundaki mavi taşlı kristal bir kolye ansızın çevreye ışık saçar ve Sheeta bu mavi taş sayesinde yavaşça yere doğru inmeye başlar. Maden kasabasında işçi olarak çalışan Pazu adlı bir çocuk, gökyüzünden iniş yapan Sheeta'yı tesadüfen görerek kurtarır ve kendi evinde saklar… İki çocuk bundan sonra, gökte uçan \"Laputa\" adlı efsanevi son kaleyi bulmak ve kötülerin oyununu bozmak zorundadırlar.",
+    "poster": "/Arvun2opqP4XFLya1FI02YYXMZW.jpg",
+    "backdrop": "/3cyjYtLWCBE1uvWINHFsFnE8LUK.jpg",
+    "genres": [
+      "Macera",
+      "Fantastik",
+      "Animasyon",
+      "Aksiyon",
+      "Aile"
+    ],
+    "director": "Hayao Miyazaki",
+    "cast": "よこざわけい子, Mayumi Tanaka, Minori Terada, 初井言榮",
+    "runtime": 125,
+    "seasons": 0,
+    "trailer": ""
+  },
+  {
+    "id": 1396,
+    "type": "tv",
+    "title": "Breaking Bad",
+    "original": "Breaking Bad",
+    "year": "2008",
+    "rating": 9,
+    "overview": "Kanserden öleceğini öğrenen bir kimya öğretmeni, ailesinin geleceğini garanti altına almak için metamfetamin üretip satmak üzere eski bir öğrencisiyle kafa kafaya verir.",
+    "poster": "/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg",
+    "backdrop": "/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
+    "genres": [
+      "Dram",
+      "Suç"
+    ],
+    "director": "Vince Gilligan",
+    "cast": "Bryan Cranston, Aaron Paul, Anna Gunn, RJ Mitte",
+    "runtime": 0,
+    "seasons": 5,
+    "trailer": "bJoEU0PuqZY"
+  },
+  {
+    "id": 550,
+    "type": "movie",
+    "title": "Dövüş Kulübü",
+    "original": "Fight Club",
+    "year": "1999",
+    "rating": 8.437,
+    "overview": "Saatli bomba gibi patlamaya hazır, uykusuzluk çeken bir adam ile tekinsiz bir sabun satıcısı; ilkel erkek saldırganlığını şok edici yeni bir terapi yöntemine dönüştürür. Kurdukları bu fikir hızla yayılır ve her şehirde yeraltı \"dövüş kulüpleri\" kurulmaya başlar ta ki egzantrik biri yollarına çıkıp yok oluşa doğru giden, kontrolden çıkmış bir sarmalı tetikleyene kadar.",
+    "poster": "/yjMuqAyJUoQZGWsZ0vZuYj5inAR.jpg",
+    "backdrop": "/c6OLXfKAk5BKeR6broC8pYiCquX.jpg",
+    "genres": [
+      "Dram",
+      "Gerilim"
+    ],
+    "director": "David Fincher",
+    "cast": "Edward Norton, Brad Pitt, Helena Bonham Carter, Meat Loaf",
+    "runtime": 139,
+    "seasons": 0,
+    "trailer": "_8WFzt_tKAA"
+  }
+]
