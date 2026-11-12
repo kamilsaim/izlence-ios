@@ -1,0 +1,50 @@
+name: App Store iPad ekran goruntusu
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: iPad simulatorunu sec
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import json,subprocess
+          state=json.loads(subprocess.check_output(['xcrun','simctl','list','devices','available','-j']))
+          candidates=[(r,d) for r,devices in state['devices'].items() if 'iOS' in r for d in devices if d['name'].startswith('iPad Pro 13')]
+          candidates.sort(key=lambda item:(item[0],item[1]['name']),reverse=True)
+          if not candidates: raise SystemExit('iPad Pro 13 simulatoru yok')
+          print('SIMULATOR_ID='+candidates[0][1]['udid'])
+          print('SIMULATOR_NAME='+candidates[0][1]['name'])
+          PY
+      - name: Uygulamayi derle
+        run: |
+          set -o pipefail
+          brew install xcodegen
+          xcodegen generate
+          xcodebuild build -project Izlence.xcodeproj -scheme Izlence -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath build/UI CODE_SIGN_IDENTITY=- | tee build-ipad.log
+      - name: Gercek iPad ekranini al
+        run: |
+          xcrun simctl boot "$SIMULATOR_ID"
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          xcrun simctl status_bar "$SIMULATOR_ID" override --time '9:41' --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
+          xcrun simctl install "$SIMULATOR_ID" build/UI/Build/Products/Debug-iphonesimulator/Izlence.app
+          xcrun simctl launch "$SIMULATOR_ID" com.kamilsaim.izlence -ui-testing
+          sleep 4
+          mkdir -p store-screenshots
+          xcrun simctl io "$SIMULATOR_ID" screenshot store-screenshots/ipad-13-ana-sayfa.png
+          xcrun simctl list devices available -j > store-screenshots/simulators.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: izlence-ipad-store
+          path: |
+            store-screenshots
+            build-ipad.log
+          retention-days: 14
